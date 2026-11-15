@@ -9,6 +9,22 @@ import * as THREE from 'three';
  * 5. Checklist pencapaian riset & skor sains bertambah.
  */
 
+/**
+ * Forces all sprites (labels/billboards) inside a group to always render on top
+ * of terrain and other opaque geometry, regardless of depth.
+ */
+function forceSpritesOnTop(group, renderOrder = 999) {
+  group.traverse(obj => {
+    if (obj.isSprite) {
+      obj.renderOrder = renderOrder;
+      if (obj.material) {
+        obj.material.depthTest = false;
+        obj.material.depthWrite = false;
+      }
+    }
+  });
+}
+
 export const REGION_SCIENCE_DATA = {
   elysium: {
     id: 'elysium',
@@ -188,6 +204,7 @@ export class MissionSystem {
       label.position.y = 195;
       group.add(label);
 
+      forceSpritesOnTop(group);
       this.scene.add(group);
 
       this.artifacts.push({
@@ -409,6 +426,7 @@ export class MissionSystem {
     label.position.y = 230;
     group.add(label);
 
+    forceSpritesOnTop(group);
     this.scene.add(group);
 
     this.activeWaypoint = {
@@ -553,6 +571,7 @@ export class MissionSystem {
     labLabel.position.y = 135;
     labGroup.add(labLabel);
 
+    forceSpritesOnTop(labGroup);
     this.scene.add(labGroup);
 
     this.labStation = {
@@ -934,7 +953,8 @@ export class MissionSystem {
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.minFilter = THREE.LinearFilter;
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false }));
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false }));
+    sprite.renderOrder = 999;
     sprite.scale.set(160, 30, 1);
     return sprite;
   }

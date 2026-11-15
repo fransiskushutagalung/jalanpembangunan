@@ -270,6 +270,20 @@ export class RoverSwarm {
   }
 
   #animateEffects(dt) {
+    // 0. Spin wheels on all rovers based on their physics speed
+    // Wheel radius = 0.4 model units * visualScale metres → circumference = 2π * 0.4 * S
+    // rad/s = speed_m_s / wheel_radius_m
+    for (const rover of this.rovers) {
+      const wheels = rover.mesh.userData.wheelGroups;
+      if (!wheels) continue;
+      const wheelRadiusM = 0.4 * this.visualScale;
+      const spinRate = rover.physics.speed / wheelRadiusM; // rad/s
+      const delta = spinRate * dt;
+      for (const w of wheels) {
+        w.rotation.x -= delta;
+      }
+    }
+
     // 1. Mapper: Rotate LiDAR dome & pulse scanning ring
     const mapper = this.rovers[0];
     if (mapper && mapper.mesh.userData.roleHooks) {

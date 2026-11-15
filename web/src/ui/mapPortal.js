@@ -1,13 +1,5 @@
 import { MARS_MAPS, getMapById } from '../maps/mapRegistry.js';
 
-/**
- * MapPortal — Halaman pemilihan peta sebelum masuk ke simulasi 3D.
- * 
- * Desain: simpel, bersih, modular.
- * - Tampilkan daftar kartu peta dari MARS_MAPS
- * - Klik kartu → masuk ke simulasi 3D
- * - Teman tim bisa menambah peta baru di mapRegistry.js
- */
 export class MapPortal {
   constructor(options = {}) {
     this.onLaunchSimulation = options.onLaunchSimulation || (() => {});
@@ -19,6 +11,8 @@ export class MapPortal {
     this.container = document.createElement('div');
     this.container.id = 'mapPortal';
     this.container.className = 'map-portal-overlay';
+    // Hidden by default — only shown manually via show()
+    this.container.style.display = 'none';
     document.body.appendChild(this.container);
     this.render();
   }

@@ -2,29 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>NASA / JPL — Mars Rover Exploration Workstation &amp; 3D Terrain Simulator</title>
+  <title>Mars Geological Map Exploration — 3D Planetary Dashboard (NASA / USGS)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/dashboard.css">
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     /* =========================================================================
        AEROSPACE ENGINEERING WORKSTATION THEME — NASA / JPL MISSION CONTROL
+       Bespoke, human-crafted design with modern typography & clean dark glassmorphism
        ========================================================================= */
+    .aerospace-icon {
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+      stroke: currentColor;
+    }
+    .btn-with-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
     :root {
-      --bg-space: #07090d;
-      --panel-bg: rgba(13, 17, 23, 0.94);
-      --panel-border: #1f2937;
-      --panel-border-focus: #374151;
-      --text-main: #f1f5f9;
+      --bg-space: #07090e;
+      --panel-bg: rgba(11, 15, 23, 0.88);
+      --panel-surface: rgba(16, 22, 34, 0.72);
+      --panel-surface-hover: rgba(24, 33, 49, 0.85);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --panel-border-subtle: rgba(255, 255, 255, 0.05);
+      --panel-border-focus: rgba(0, 229, 255, 0.4);
+      --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
+      --text-accent: #38bdf8;
       --nasa-blue: #0b3d91;
+      --nasa-blue-hover: #134db3;
       --nasa-red: #e03c31;
       --data-cyan: #00e5ff;
+      --data-cyan-soft: rgba(0, 229, 255, 0.14);
       --status-green: #10b981;
       --status-amber: #f59e0b;
       --status-red: #ef4444;
-      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -33,22 +59,34 @@
       height: 100%;
       overflow: hidden;
       background: var(--bg-space);
-      font: 12px/1.45 var(--font-sans);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.5;
       color: var(--text-main);
       user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
     }
 
     #app { position: fixed; inset: 0; }
+
+    /* Telemetry and tabular numerals */
+    .tabular-nums, .val, .src-coords, .hist-stats-table td:last-child, #hoverLonLat, #hoverProj, #hoverElev, #hoverSlope, #miniCoords {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: 'tnum' 1, 'zero' 1;
+    }
 
     /* Aerospace Technical Panels */
     .panel {
       position: fixed;
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
-      border-radius: 4px;
-      padding: 12px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+      border-radius: 10px;
+      padding: 14px;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
       z-index: 10;
     }
 
@@ -56,47 +94,166 @@
     #robotDetailPanel {
       top: 12px;
       right: 12px;
-      width: 380px;
+      width: 384px;
       max-height: calc(100vh - 24px);
       overflow-y: auto;
       overflow-x: hidden;
       scrollbar-width: thin;
-      scrollbar-color: #374151 transparent;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    #robotDetailPanel::-webkit-scrollbar { width: 5px; }
-    #robotDetailPanel::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+    #robotDetailPanel::-webkit-scrollbar { width: 4px; }
+    #robotDetailPanel::-webkit-scrollbar-track { background: transparent; }
+    #robotDetailPanel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+    }
+    #robotDetailPanel::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
 
-    /* TOP-LEFT MINIMAL SIMULATION CONTROL BAR */
-    #topControlBar {
+    /* TOP-LEFT FLOATING ACTION BUTTON (FAB) & EXPANDABLE WORKSTATION TOOLBAR */
+    .top-nav-wrapper {
+      position: fixed;
       top: 12px;
       left: 12px;
-      max-width: calc(100vw - 740px);
       display: flex;
       align-items: center;
       gap: 8px;
-      z-index: 15;
+      z-index: 30;
+      max-width: calc(100vw - 740px);
+    }
+
+    .top-nav-fab {
+      height: 34px;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(11, 16, 26, 0.88);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      border-radius: 8px;
+      color: var(--data-cyan);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 229, 255, 0.15);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+    }
+    .top-nav-fab:hover {
+      background: rgba(14, 22, 36, 0.95);
+      border-color: var(--data-cyan);
+      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.8), 0 0 18px rgba(0, 229, 255, 0.35);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .top-nav-fab.active {
+      background: var(--data-cyan);
+      color: #050a12;
+      border-color: var(--data-cyan);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+    }
+    .top-nav-fab .fab-icon-symbol {
+      font-size: 13px;
+      line-height: 1;
+    }
+    .top-nav-fab .fab-text {
+      font-size: 10.5px;
+      letter-spacing: 0.5px;
+    }
+
+    #topControlBar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       overflow-x: auto;
       scrollbar-width: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      opacity: 1;
+      transform: translateX(0);
     }
     #topControlBar::-webkit-scrollbar { display: none; }
 
+    #topControlBar.collapsed {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-15px);
+      display: none !important;
+    }
+
+    /* Quick Live Status Chip & Control Buttons */
+    .top-chip {
+      height: 34px;
+      background: rgba(11, 16, 26, 0.82);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0 12px;
+      font-size: 11px;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      cursor: default;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+    }
+    button.top-chip {
+      cursor: pointer;
+    }
+    button.top-chip:hover {
+      background: rgba(18, 26, 42, 0.9);
+      border-color: rgba(255, 255, 255, 0.16);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .top-chip.btn-cyan {
+      background: rgba(0, 229, 255, 0.08);
+      border-color: rgba(0, 229, 255, 0.35);
+      color: var(--data-cyan);
+    }
+    .top-chip.btn-cyan:hover {
+      background: rgba(0, 229, 255, 0.18);
+      border-color: var(--data-cyan);
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.28);
+      color: #fff;
+    }
+    .top-chip.telemetry-chip {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: #7d8ea3;
+    }
+    .top-chip.telemetry-chip b {
+      color: var(--text-main);
+      font-variant-numeric: tabular-nums;
+    }
+
     /* =========================================================================
-       NASA JPL TACTICAL MINIMAP & MAXIMIZED SURFACE RECONNAISSANCE STATION
+       NASA JPL TACTICAL MINIMAP (Kanan Atas, Sebelah Robot Detail Panel)
        ========================================================================= */
-    /* 1. COMPACT HUD MINIMAP (Kanan Atas, Sebelah Robot Detail Panel) */
     .minimap-widget {
       position: fixed;
       top: 12px;
-      right: 404px;
+      right: 408px;
       width: 320px;
-      background: rgba(11, 15, 23, 0.95);
-      border: 1px solid #1f2a3c;
-      border-radius: 4px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.85), 0 0 1px rgba(0, 229, 255, 0.3);
-      backdrop-filter: blur(12px);
+      background: rgba(10, 14, 22, 0.9);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
       z-index: 25;
       user-select: none;
-      font-family: var(--font-mono, monospace);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -104,7 +261,7 @@
     }
     @media (max-width: 1280px) {
       .minimap-widget {
-        right: 396px;
+        right: 400px;
         width: 270px;
       }
     }
@@ -116,26 +273,8 @@
         width: 260px;
       }
     }
-    .minimap-widget::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; width: 6px; height: 6px;
-      border-top: 2px solid var(--data-cyan, #00e5ff);
-      border-left: 2px solid var(--data-cyan, #00e5ff);
-      pointer-events: none;
-      z-index: 2;
-    }
-    .minimap-widget::after {
-      content: "";
-      position: absolute;
-      bottom: 0; right: 0; width: 6px; height: 6px;
-      border-bottom: 2px solid var(--data-cyan, #00e5ff);
-      border-right: 2px solid var(--data-cyan, #00e5ff);
-      pointer-events: none;
-      z-index: 2;
-    }
     .minimap-widget.collapsed {
-      height: 34px !important;
+      height: 36px !important;
       width: 220px;
     }
     .minimap-widget.collapsed .minimap-body,
@@ -147,10 +286,10 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 5px 8px;
-      background: #0d141e;
-      border-bottom: 1px solid #1c2636;
-      height: 32px;
+      padding: 6px 10px;
+      background: rgba(14, 20, 32, 0.7);
+      border-bottom: 1px solid var(--panel-border-subtle);
+      height: 34px;
     }
     .minimap-title-group {
       display: flex;
@@ -158,19 +297,21 @@
       gap: 6px;
     }
     .minimap-badge {
+      font-family: var(--font-mono);
       font-size: 10px;
-      font-weight: 800;
-      color: var(--data-cyan, #00e5ff);
-      letter-spacing: 0.5px;
+      font-weight: 700;
+      color: var(--data-cyan);
+      letter-spacing: 0.6px;
     }
     .minimap-rover-tag {
+      font-family: var(--font-mono);
       font-size: 9.5px;
-      background: #141f2e;
-      border: 1px solid #23354c;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       color: #e2e8f0;
-      padding: 1px 5px;
-      border-radius: 2px;
-      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
     }
     .minimap-controls {
       display: flex;
@@ -178,28 +319,28 @@
       gap: 3px;
     }
     .mini-icon-btn {
-      background: #131b26;
-      border: 1px solid #243346;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
       color: #94a3b8;
-      border-radius: 2px;
-      width: 22px;
-      height: 20px;
+      border-radius: 4px;
+      width: 24px;
+      height: 22px;
       padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 10px;
-      font-family: inherit;
+      font-size: 11px;
+      font-family: var(--font-mono);
       transition: all 0.15s ease;
     }
     .mini-icon-btn:hover {
-      background: #1d2a3c;
+      background: rgba(255, 255, 255, 0.1);
       color: #fff;
-      border-color: var(--data-cyan, #00e5ff);
+      border-color: rgba(255, 255, 255, 0.2);
     }
     .mini-icon-btn.max-btn {
-      color: var(--data-cyan, #00e5ff);
+      color: var(--data-cyan);
       font-weight: 800;
     }
 
@@ -207,7 +348,7 @@
       position: relative;
       width: 100%;
       height: 200px;
-      background: #07090d;
+      background: #05070b;
       overflow: hidden;
       cursor: grab;
     }
@@ -220,32 +361,35 @@
 
     .minimap-compass {
       position: absolute;
-      top: 6px;
-      right: 8px;
-      font-size: 9px;
+      top: 8px;
+      right: 10px;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
       font-weight: 800;
-      color: var(--data-cyan, #00e5ff);
+      color: var(--data-cyan);
       pointer-events: none;
       display: flex;
       flex-direction: column;
       align-items: center;
       line-height: 1;
-      opacity: 0.85;
+      opacity: 0.9;
     }
     .minimap-compass::before {
       content: "▲";
       font-size: 8px;
-      color: var(--nasa-red, #e03c31);
+      color: var(--nasa-red);
+      margin-bottom: 2px;
     }
     .minimap-scale-bar {
       position: absolute;
-      bottom: 5px;
-      left: 8px;
-      font-size: 8.5px;
+      bottom: 7px;
+      left: 10px;
+      font-family: var(--font-mono);
+      font-size: 9px;
       color: #94a3b8;
       pointer-events: none;
-      border-bottom: 2px solid #00e5ff;
-      padding-bottom: 1px;
+      border-bottom: 2px solid var(--data-cyan);
+      padding-bottom: 2px;
       line-height: 1;
     }
 
@@ -253,29 +397,35 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 4px 8px;
-      background: #090e15;
-      border-top: 1px solid #16202c;
+      padding: 6px 10px;
+      background: rgba(10, 14, 22, 0.8);
+      border-top: 1px solid var(--panel-border-subtle);
+      font-family: var(--font-mono);
       font-size: 9.5px;
-      color: #64748b;
+      color: #718096;
+      font-variant-numeric: tabular-nums;
     }
     .mini-hint {
-      color: var(--data-cyan, #00e5ff);
+      color: var(--data-cyan);
       font-weight: 700;
       cursor: pointer;
     }
+    .mini-hint:hover { text-decoration: underline; }
 
-    /* 2. MAXIMIZED TACTICAL MAPPING STATION (Full-screen Modal) */
+    /* =========================================================================
+       MAXIMIZED TACTICAL MAPPING STATION (Full-screen Modal)
+       ========================================================================= */
     .max-map-modal {
       position: fixed;
       inset: 0;
       z-index: 2000;
-      background: rgba(7, 10, 15, 0.98);
-      backdrop-filter: blur(14px);
+      background: rgba(6, 9, 14, 0.96);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
       display: flex;
       flex-direction: column;
-      font-family: var(--font-sans, sans-serif);
-      color: #f1f5f9;
+      font-family: var(--font-sans);
+      color: var(--text-main);
       user-select: none;
       overflow: hidden;
     }
@@ -283,135 +433,141 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 16px;
-      background: #0a0f17;
-      border-bottom: 1px solid #1f2c3e;
+      padding: 10px 20px;
+      background: rgba(11, 16, 26, 0.85);
+      border-bottom: 1px solid var(--panel-border);
       flex-shrink: 0;
-      gap: 12px;
+      gap: 16px;
     }
     .max-header-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
     .agency-badge {
-      font-family: var(--font-mono, monospace);
+      font-family: var(--font-mono);
       font-size: 13px;
       font-weight: 900;
-      color: var(--nasa-red, #e03c31);
+      color: var(--nasa-red);
       letter-spacing: 1.2px;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
     }
     .agency-badge span {
-      background: var(--nasa-red, #e03c31);
+      background: var(--nasa-red);
       color: #fff;
-      padding: 1px 4px;
-      border-radius: 2px;
-      font-size: 9px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 9.5px;
+      letter-spacing: 0.5px;
     }
     .max-map-title {
       margin: 0;
-      font-size: 13px;
-      font-weight: 800;
+      font-size: 12.5px;
+      font-weight: 700;
       color: #f8fafc;
-      letter-spacing: 0.5px;
-      font-family: var(--font-mono, monospace);
+      letter-spacing: 0.4px;
+      font-family: var(--font-sans);
     }
     .max-map-sub {
       font-size: 10px;
-      color: #64748b;
-      font-family: var(--font-mono, monospace);
-      margin-top: 1px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-top: 2px;
     }
     .max-header-center {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
     .layer-pill-group {
       display: flex;
-      background: #111823;
-      border: 1px solid #1e2c3e;
-      border-radius: 4px;
-      padding: 2px;
-      gap: 2px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      padding: 3px;
+      gap: 3px;
     }
     .layer-btn {
       background: transparent;
       border: 0;
       color: #94a3b8;
-      padding: 5px 10px;
-      border-radius: 3px;
-      font-size: 10.5px;
+      padding: 5px 11px;
+      border-radius: 4px;
+      font-size: 11px;
       cursor: pointer;
-      font-family: var(--font-mono, monospace);
+      font-family: var(--font-sans);
       font-weight: 600;
       transition: all 0.15s ease;
     }
-    .layer-btn:hover { color: #fff; background: #1a2536; }
+    .layer-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
     .layer-btn.active {
-      background: var(--nasa-blue, #0b3d91);
+      background: var(--nasa-blue);
       color: #fff;
-      font-weight: 700;
-      box-shadow: 0 0 10px rgba(11, 61, 145, 0.5);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(11, 61, 145, 0.6);
     }
     .tint-toggle-label {
-      font-size: 10px;
-      font-family: var(--font-mono, monospace);
+      font-size: 10.5px;
+      font-family: var(--font-sans);
       color: #94a3b8;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       cursor: pointer;
     }
     .max-header-right {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
     .overlay-toggles {
       display: flex;
-      gap: 8px;
-      font-size: 10px;
-      font-family: var(--font-mono, monospace);
+      gap: 10px;
+      font-size: 10.5px;
+      font-family: var(--font-sans);
       color: #94a3b8;
     }
     .overlay-toggles label {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       cursor: pointer;
     }
     .max-action-btn {
-      background: #141e2c;
-      border: 1px solid #24354c;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
       color: #e2e8f0;
-      border-radius: 3px;
-      padding: 5px 10px;
-      font-size: 10.5px;
-      font-family: var(--font-mono, monospace);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .max-action-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    .max-close-btn {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-family: var(--font-sans);
       font-weight: 700;
       cursor: pointer;
       transition: all 0.15s ease;
     }
-    .max-action-btn:hover { background: #1f3047; border-color: var(--data-cyan, #00e5ff); color: #fff; }
-    .max-close-btn {
-      background: #1c2738;
-      border: 1px solid #324660;
-      color: #fff;
-      border-radius: 3px;
-      padding: 5px 12px;
-      font-size: 11px;
-      font-family: var(--font-mono, monospace);
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
     .max-close-btn:hover {
-      background: var(--nasa-red, #e03c31);
-      border-color: var(--nasa-red, #e03c31);
+      background: var(--nasa-red);
+      border-color: var(--nasa-red);
+      color: #fff;
     }
     .max-map-body {
       flex: 1;
@@ -433,65 +589,67 @@
     }
     .max-hover-hud {
       position: absolute;
-      top: 14px;
-      left: 14px;
-      background: rgba(10, 15, 23, 0.92);
-      border: 1px solid #1f2c3e;
-      border-radius: 4px;
-      padding: 8px 12px;
-      font-family: var(--font-mono, monospace);
+      top: 16px;
+      left: 16px;
+      background: rgba(10, 14, 22, 0.9);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
       font-size: 10px;
       color: #cbd5e1;
       pointer-events: none;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.7);
-      backdrop-filter: blur(8px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(16px);
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
       z-index: 5;
     }
     .max-hover-hud .hud-row {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
+      gap: 16px;
     }
-    .max-hover-hud .hud-row b { color: #64748b; }
+    .max-hover-hud .hud-row b { color: #64748b; font-weight: 600; }
     .canvas-floating-controls {
       position: absolute;
       bottom: 24px;
       right: 24px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
       z-index: 5;
     }
     .float-btn {
-      width: 32px;
-      height: 32px;
-      background: rgba(16, 23, 35, 0.9);
-      border: 1px solid #28394f;
+      width: 34px;
+      height: 34px;
+      background: rgba(14, 20, 30, 0.88);
+      border: 1px solid var(--panel-border);
       color: #f1f5f9;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: 800;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: var(--font-mono, monospace);
+      font-family: var(--font-mono);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px);
       transition: all 0.15s ease;
     }
     .float-btn:hover {
-      background: #223249;
-      border-color: var(--data-cyan, #00e5ff);
-      color: var(--data-cyan, #00e5ff);
+      background: rgba(22, 32, 48, 0.95);
+      border-color: var(--data-cyan);
+      color: var(--data-cyan);
     }
     .canvas-scale-bar-container {
       position: absolute;
-      bottom: 16px;
-      left: 16px;
-      font-family: var(--font-mono, monospace);
-      font-size: 10px;
+      bottom: 18px;
+      left: 18px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
       color: #cbd5e1;
       pointer-events: none;
       z-index: 5;
@@ -499,20 +657,20 @@
     #dynamicScaleLine {
       width: 120px;
       height: 3px;
-      background: #00e5ff;
-      margin-top: 2px;
+      background: var(--data-cyan);
+      margin-top: 3px;
       border-left: 2px solid #fff;
       border-right: 2px solid #fff;
-      box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
     }
     .canvas-compass-indicator {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      font-family: var(--font-mono, monospace);
+      top: 18px;
+      right: 18px;
+      font-family: var(--font-mono);
       font-size: 12px;
       font-weight: 900;
-      color: var(--data-cyan, #00e5ff);
+      color: var(--data-cyan);
       pointer-events: none;
       display: flex;
       flex-direction: column;
@@ -521,241 +679,238 @@
       z-index: 5;
     }
     .compass-arrow {
-      color: var(--nasa-red, #e03c31);
+      color: var(--nasa-red);
       font-size: 14px;
       margin-bottom: 2px;
     }
     .target-action-pill {
       position: absolute;
-      background: rgba(14, 21, 31, 0.96);
-      border: 1px solid var(--data-cyan, #00e5ff);
-      border-radius: 4px;
-      padding: 8px 12px;
-      font-family: var(--font-mono, monospace);
-      font-size: 10px;
-      box-shadow: 0 4px 20px rgba(0, 229, 255, 0.25);
+      background: rgba(11, 16, 26, 0.94);
+      border: 1px solid var(--data-cyan);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      box-shadow: 0 8px 24px rgba(0, 229, 255, 0.25);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       z-index: 10;
       transform: translate(-50%, -120%);
     }
     .pill-act-btn {
-      background: #0b3d91;
-      border: 1px solid #1b53b8;
+      background: var(--nasa-blue);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: #fff;
-      border-radius: 3px;
-      padding: 4px 8px;
-      font-size: 9.5px;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 10.5px;
       cursor: pointer;
       font-family: inherit;
-      font-weight: 700;
+      font-weight: 600;
     }
-    .pill-act-btn:hover { background: #134db3; }
+    .pill-act-btn:hover { background: var(--nasa-blue-hover); }
     .pill-close-btn {
       background: transparent;
       border: 0;
       color: #64748b;
       cursor: pointer;
-      font-size: 11px;
+      font-size: 12px;
     }
     .pill-close-btn:hover { color: #fff; }
     .max-map-sidebar {
       width: 330px;
-      background: #090e15;
-      border-left: 1px solid #1d293a;
+      background: rgba(9, 13, 20, 0.95);
+      border-left: 1px solid var(--panel-border);
       overflow-y: auto;
-      padding: 12px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
       gap: 12px;
       flex-shrink: 0;
     }
     .side-card {
-      background: #0e141e;
-      border: 1px solid #1e2a3c;
-      border-radius: 4px;
-      padding: 10px;
+      background: var(--panel-surface);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 8px;
+      padding: 12px;
     }
     .side-card-title {
-      font-family: var(--font-mono, monospace);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      color: #64748b;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #738a9c;
       text-transform: uppercase;
       margin-bottom: 8px;
-      border-bottom: 1px solid #1a2534;
-      padding-bottom: 4px;
+      border-bottom: 1px solid var(--panel-border-subtle);
+      padding-bottom: 5px;
     }
     .sidebar-rover-list { display: flex; flex-direction: column; gap: 6px; }
     .side-rover-card {
-      background: #121a26;
-      border: 1px solid #202d3e;
-      border-radius: 3px;
-      padding: 6px 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 6px;
+      padding: 8px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-family: var(--font-mono, monospace);
+      font-family: var(--font-mono);
       font-size: 10px;
+      transition: all 0.15s ease;
     }
-    .side-rover-card.active { border-color: var(--data-cyan, #00e5ff); background: #142232; }
+    .side-rover-card.active {
+      border-color: rgba(0, 229, 255, 0.4);
+      background: rgba(0, 229, 255, 0.06);
+    }
     .src-meta { display: flex; flex-direction: column; gap: 2px; }
-    .src-callsign { font-weight: 800; }
-    .src-coords { font-size: 9px; color: #64748b; }
+    .src-callsign { font-weight: 700; }
+    .src-coords { font-size: 9.5px; color: #788a9f; }
     .src-btn {
-      background: #1a2738;
-      border: 1px solid #283b52;
-      color: #94a3b8;
-      border-radius: 2px;
-      padding: 3px 6px;
-      font-size: 9px;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    .src-btn:hover { background: #26384f; color: #fff; }
-    .sidebar-regions-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-    .region-tag-btn {
-      background: #111822;
-      border: 1px solid #1f2b3b;
-      border-radius: 3px;
-      padding: 6px 4px;
-      text-align: center;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--panel-border);
+      color: #cbd5e1;
+      border-radius: 4px;
+      padding: 4px 8px;
       font-size: 9.5px;
-      font-family: var(--font-mono, monospace);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+    .src-btn:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+    .sidebar-regions-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .region-tag-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 6px;
+      padding: 7px 6px;
+      text-align: center;
+      font-size: 10px;
+      font-family: var(--font-sans);
+      font-weight: 600;
       color: #cbd5e1;
       cursor: pointer;
       transition: all 0.15s ease;
       line-height: 1.25;
     }
     .region-tag-btn:hover {
-      background: #192434;
-      border-color: var(--data-cyan, #00e5ff);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(0, 229, 255, 0.4);
       color: #fff;
     }
     .elevation-legend-bar {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
       margin-top: 4px;
     }
     .legend-gradient {
-      height: 12px;
-      border-radius: 2px;
+      height: 10px;
+      border-radius: 3px;
       background: linear-gradient(to right, #0a192f, #1a5276, #2e86c1, #27ae60, #f1c40f, #e67e22, #c0392b, #f5eee6);
-      border: 1px solid #24354c;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .legend-labels {
       display: flex;
       justify-content: space-between;
-      font-family: var(--font-mono, monospace);
-      font-size: 8.5px;
-      color: #64748b;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: #718096;
     }
     .slope-legend-scale {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 4px;
+      gap: 5px;
       margin-top: 8px;
-      font-family: var(--font-mono, monospace);
-      font-size: 9px;
+      font-family: var(--font-sans);
+      font-size: 9.5px;
     }
     .slope-pill {
-      padding: 3px 5px;
-      border-radius: 2px;
-      background: #121924;
+      padding: 4px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border-subtle);
     }
-    .slope-pill.safe { color: #2ecc71; border-left: 2px solid #2ecc71; }
-    .slope-pill.mild { color: #82c91e; border-left: 2px solid #82c91e; }
-    .slope-pill.caution { color: #f1c40f; border-left: 2px solid #f1c40f; }
-    .slope-pill.hazard { color: #e74c3c; border-left: 2px solid #e74c3c; }
+    .slope-pill.safe { color: #2ecc71; border-left: 3px solid #2ecc71; }
+    .slope-pill.mild { color: #82c91e; border-left: 3px solid #82c91e; }
+    .slope-pill.caution { color: #f1c40f; border-left: 3px solid #f1c40f; }
+    .slope-pill.hazard { color: #e74c3c; border-left: 3px solid #e74c3c; }
     .mission-objects-box {
-      font-family: var(--font-mono, monospace);
+      font-family: var(--font-mono);
       font-size: 9.5px;
       color: #94a3b8;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
     }
     .m-obj-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 3px 5px;
-      background: #111722;
-      border-radius: 2px;
+      padding: 5px 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 4px;
+      border: 1px solid var(--panel-border-subtle);
     }
 
     /* Floating Simulation Settings Dropdown */
     #simSettingsModal {
-      top: 48px;
+      top: 52px;
       left: 12px;
-      width: 270px;
+      width: 280px;
       display: none;
       z-index: 20;
     }
-
-    /* Quick Live Status Chip */
-    .top-chip {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-radius: 4px;
-      padding: 6px 12px;
-      font-size: 11px;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      backdrop-filter: blur(8px);
-    }
-    .top-chip b { color: var(--text-main); }
 
     /* Bottom Help Bar */
     #help {
       bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(13, 17, 23, 0.95);
+      background: rgba(10, 14, 22, 0.85);
       border: 1px solid var(--panel-border);
-      padding: 5px 16px;
-      border-radius: 4px;
+      padding: 6px 18px;
+      border-radius: 20px;
       font-size: 11px;
       color: var(--text-muted);
       white-space: nowrap;
       z-index: 10;
-      font-family: var(--font-mono);
+      font-family: var(--font-sans);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
     }
     kbd {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 3px;
-      padding: 1px 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 4px;
+      padding: 1px 6px;
       font-weight: 700;
       color: var(--data-cyan);
       font-size: 10px;
+      font-family: var(--font-mono);
     }
 
     /* Typography & Hierarchy */
     h3 {
-      margin: 0 0 8px;
-      font-size: 11.5px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-muted);
+      margin: 0 0 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text-main);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid #1e293b;
-      padding-bottom: 4px;
+      border-bottom: 1px solid var(--panel-border-subtle);
+      padding-bottom: 6px;
     }
     .section-title {
-      font-size: 10px;
+      font-size: 9.5px;
       font-family: var(--font-mono);
       font-weight: 700;
-      letter-spacing: 0.8px;
-      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      color: #738a9c;
       text-transform: uppercase;
       margin-bottom: 6px;
     }
@@ -765,9 +920,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--panel-border);
-      padding-bottom: 8px;
-      margin-bottom: 10px;
+      border-bottom: 1px solid var(--panel-border-subtle);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
     }
     .nasa-tag {
       display: inline-flex;
@@ -776,14 +931,14 @@
       font-weight: 900;
       letter-spacing: 1.5px;
       color: var(--nasa-red);
-      font-size: 14px;
+      font-size: 15px;
       font-family: var(--font-mono);
     }
     .nasa-tag span {
       background: var(--nasa-red);
       color: #fff;
       padding: 1px 5px;
-      border-radius: 2px;
+      border-radius: 3px;
       font-size: 10px;
       letter-spacing: 0.5px;
     }
@@ -794,20 +949,24 @@
       text-align: right;
     }
 
-    /* Robot Selector Tabs */
+    /* Robot Selector Tabs (Sleek Segmented Control) */
     .robot-selector-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 4px;
-      margin-bottom: 10px;
+      background: rgba(6, 9, 14, 0.6);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--panel-border-subtle);
+      margin-bottom: 12px;
     }
     .r-btn {
-      padding: 6px 4px;
-      font-size: 10px;
+      padding: 7px 4px;
+      font-size: 10.5px;
       text-align: center;
-      background: #111620;
-      border: 1px solid var(--panel-border);
-      border-radius: 3px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
       color: var(--text-muted);
       cursor: pointer;
       display: flex;
@@ -815,59 +974,74 @@
       align-items: center;
       gap: 2px;
       transition: all 0.15s ease;
-      font-family: var(--font-mono);
+      font-family: var(--font-sans);
     }
-    .r-btn:hover { background: #1a2230; color: #fff; border-color: var(--panel-border-focus); }
+    .r-btn:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+    }
     .r-btn.active {
-      background: #151e2c;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.12);
       color: #fff;
       font-weight: 700;
-      border-color: var(--data-cyan);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     }
 
     /* INTERACTIVE 3D ROBOT VIEWER CONTAINER */
     .viewer-card {
-      background: #090c10;
-      border: 1px solid var(--panel-border);
-      border-radius: 4px;
+      background: var(--panel-surface);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 8px;
       overflow: hidden;
       margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
     .viewer-toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 5px 8px;
-      background: #0f141c;
-      border-bottom: 1px solid var(--panel-border);
-      font-size: 10px;
+      padding: 6px 10px;
+      background: rgba(14, 20, 32, 0.5);
+      border-bottom: 1px solid var(--panel-border-subtle);
+      font-size: 9.5px;
       font-family: var(--font-mono);
+      font-weight: 600;
       color: var(--text-dim);
     }
     .viewer-tools-group { display: flex; gap: 4px; }
     .viewer-btn {
-      background: #161e2a;
-      border: 1px solid #243040;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       color: var(--text-muted);
-      border-radius: 2px;
-      padding: 2px 7px;
+      border-radius: 4px;
+      padding: 2px 8px;
       font-size: 10px;
       cursor: pointer;
       font-family: var(--font-mono);
+      transition: all 0.15s ease;
     }
-    .viewer-btn:hover { background: #223044; color: #fff; border-color: var(--data-cyan); }
-    .viewer-btn.active { background: #00e5ff22; color: var(--data-cyan); border-color: var(--data-cyan); }
+    .viewer-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .viewer-btn.active {
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--data-cyan);
+      border-color: rgba(0, 229, 255, 0.4);
+    }
 
     #roverViewerContainer {
       position: relative;
       width: 100%;
       height: 210px;
-      background: #070a0e;
+      background: #06090e;
     }
     .viewer-hint {
       position: absolute;
-      bottom: 5px;
-      left: 8px;
+      bottom: 6px;
+      left: 10px;
       font-size: 9px;
       font-family: var(--font-mono);
       color: #475569;
@@ -878,11 +1052,11 @@
     .specs-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 4px 8px;
-      padding: 6px 8px;
-      background: #0c1017;
-      border-top: 1px solid var(--panel-border);
-      font-size: 9.5px;
+      gap: 5px 12px;
+      padding: 8px 10px;
+      background: rgba(10, 14, 22, 0.6);
+      border-top: 1px solid var(--panel-border-subtle);
+      font-size: 10px;
       font-family: var(--font-mono);
     }
     .spec-item { display: flex; justify-content: space-between; color: var(--text-dim); }
@@ -890,28 +1064,29 @@
 
     /* SHOW HISTORY TRACK SECTION */
     .history-card {
-      background: #0e131b;
-      border: 1px solid var(--panel-border);
-      border-radius: 4px;
-      padding: 8px;
+      background: var(--panel-surface);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 8px;
+      padding: 10px;
       margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
     .hist-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .history-toggle-btn {
       width: 100%;
-      background: #111a26;
-      border: 1px solid #1e2e42;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--panel-border);
       color: var(--text-muted);
-      border-radius: 3px;
-      padding: 7px 10px;
+      border-radius: 6px;
+      padding: 7px 12px;
       font-size: 11px;
-      font-family: var(--font-mono);
-      font-weight: 700;
+      font-family: var(--font-sans);
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -919,191 +1094,257 @@
       transition: all 0.15s ease;
     }
     .history-toggle-btn.active {
-      background: #08202d;
-      border-color: var(--data-cyan);
+      background: rgba(0, 229, 255, 0.08);
+      border-color: rgba(0, 229, 255, 0.35);
       color: var(--data-cyan);
     }
-    .history-toggle-btn:hover { border-color: var(--data-cyan); }
+    .history-toggle-btn:hover { border-color: rgba(0, 229, 255, 0.5); }
 
     .hist-stats-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 6px;
-      font-size: 10px;
-      font-family: var(--font-mono);
+      margin-top: 8px;
+      font-size: 10.5px;
+      font-family: var(--font-sans);
     }
     .hist-stats-table td {
-      padding: 3px 0;
-      border-bottom: 1px solid #161f2b;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--panel-border-subtle);
     }
-    .hist-stats-table td:first-child { color: var(--text-dim); width: 110px; }
-    .hist-stats-table td:last-child { color: var(--text-main); font-weight: 600; text-align: right; }
+    .hist-stats-table td:first-child { color: var(--text-dim); width: 120px; }
+    .hist-stats-table td:last-child {
+      color: var(--text-main);
+      font-weight: 600;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
 
     .btn-subtle {
       width: 100%;
       background: transparent;
-      border: 1px dashed #243142;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
       color: var(--text-dim);
-      font-size: 10px;
-      padding: 4px;
-      border-radius: 3px;
+      font-size: 10.5px;
+      padding: 5px;
+      border-radius: 6px;
       cursor: pointer;
-      font-family: var(--font-mono);
-      margin-top: 6px;
+      font-family: var(--font-sans);
+      margin-top: 8px;
+      transition: all 0.15s ease;
     }
-    .btn-subtle:hover { background: #131c26; color: var(--text-muted); }
+    .btn-subtle:hover { background: rgba(255, 255, 255, 0.04); color: var(--text-muted); border-color: rgba(255, 255, 255, 0.2); }
 
     #histLogContainer {
       display: none;
-      margin-top: 6px;
+      margin-top: 8px;
       max-height: 120px;
       overflow-y: auto;
-      border: 1px solid #1e293b;
-      border-radius: 3px;
-      background: #090d12;
-      font-size: 9px;
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 6px;
+      background: #06090e;
+      font-size: 9.5px;
       font-family: var(--font-mono);
     }
     .hist-log-row {
       display: grid;
-      grid-template-columns: 24px 50px 1fr 45px;
-      padding: 2px 4px;
-      border-bottom: 1px solid #141b24;
+      grid-template-columns: 24px 52px 1fr 45px;
+      padding: 3px 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
       color: var(--text-dim);
     }
-    .hist-log-row:nth-child(even) { background: #0c1117; }
+    .hist-log-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
     .hist-log-row span:last-child { text-align: right; color: var(--text-muted); }
 
     /* LIVE FLIGHT KINEMATICS */
     .telemetry-card {
-      background: #0c1017;
-      border: 1px solid var(--panel-border);
-      border-radius: 4px;
-      padding: 8px;
+      background: var(--panel-surface);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 8px;
+      padding: 10px;
       margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
     .telemetry-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 4px;
+      gap: 6px;
       text-align: center;
-      font-family: var(--font-mono);
+      margin-top: 4px;
     }
     .telem-box {
-      background: #111722;
-      border: 1px solid #1c2736;
-      border-radius: 3px;
-      padding: 4px 2px;
+      background: rgba(10, 14, 22, 0.6);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 6px;
+      padding: 6px 4px;
     }
-    .telem-box .lbl { font-size: 9px; color: var(--text-dim); }
-    .telem-box .val { font-size: 11px; font-weight: 700; color: var(--data-cyan); }
+    .telem-box .lbl {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+    }
+    .telem-box .val {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--data-cyan);
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
 
     /* MISSION PIPELINE (Workflow) */
     .workflow-box {
-      background: #0c1017;
-      border: 1px solid var(--panel-border);
-      border-radius: 4px;
-      padding: 8px;
+      background: var(--panel-surface);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 8px;
+      padding: 10px;
       margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
     .wf-steps {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 3px;
+      gap: 4px;
+      margin-top: 4px;
     }
     .wf-step {
-      background: #101620;
-      border: 1px solid #1b2636;
-      border-radius: 3px;
-      padding: 4px 2px;
+      background: rgba(10, 14, 22, 0.6);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 6px;
+      padding: 6px 3px;
       text-align: center;
-      font-size: 8.5px;
-      font-family: var(--font-mono);
-      color: #4b5563;
-      line-height: 1.25;
+      font-size: 9px;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      color: #64748b;
+      line-height: 1.3;
     }
-    .wf-step.current { border-color: var(--data-cyan); color: var(--data-cyan); background: #00e5ff11; font-weight: 700; }
-    .wf-step.active { border-color: var(--status-amber); color: var(--status-amber); background: #f59e0b11; font-weight: 700; }
-    .wf-step.done { border-color: var(--status-green); color: var(--status-green); background: #10b98111; }
+    .wf-step.current { border-color: rgba(0, 229, 255, 0.5); color: var(--data-cyan); background: rgba(0, 229, 255, 0.08); font-weight: 700; }
+    .wf-step.active { border-color: rgba(245, 158, 11, 0.5); color: var(--status-amber); background: rgba(245, 158, 11, 0.08); font-weight: 700; }
+    .wf-step.done { border-color: rgba(16, 185, 129, 0.5); color: var(--status-green); background: rgba(16, 185, 129, 0.08); }
 
     /* Contextual Action Card */
     .action-card {
-      background: #0e141d;
-      border: 1px solid var(--panel-border);
-      border-radius: 4px;
-      padding: 8px;
+      background: var(--panel-surface);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 8px;
+      padding: 10px;
       margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
     .btn-main-action {
       width: 100%;
-      background: var(--nasa-blue);
+      background: linear-gradient(180deg, #1652b0 0%, #0b3d91 100%);
       color: #fff;
-      border: 1px solid #1e4fa3;
-      border-radius: 3px;
-      padding: 8px;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: var(--font-mono);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      letter-spacing: 0.2px;
       cursor: pointer;
-      transition: background 0.15s ease;
+      box-shadow: 0 4px 14px rgba(11, 61, 145, 0.4);
+      transition: all 0.15s ease;
     }
-    .btn-main-action:hover { background: #1251b8; }
+    .btn-main-action:hover {
+      background: linear-gradient(180deg, #1b5ed0 0%, #0e48ac 100%);
+      box-shadow: 0 6px 18px rgba(11, 61, 145, 0.6);
+      transform: translateY(-1px);
+    }
     .btn-sec-action {
       width: 100%;
-      margin-top: 5px;
-      background: #162232;
+      margin-top: 6px;
+      background: rgba(255, 255, 255, 0.05);
       color: var(--text-muted);
-      border: 1px solid #283a52;
-      border-radius: 3px;
-      padding: 6px;
-      font-size: 10.5px;
-      font-family: var(--font-mono);
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 11px;
+      font-family: var(--font-sans);
+      font-weight: 500;
       cursor: pointer;
+      transition: all 0.15s ease;
     }
-    .btn-sec-action:hover { background: #203147; color: #fff; }
+    .btn-sec-action:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
 
     /* Science Quests Checklist */
     .quest-box {
-      background: #0c1017;
-      border: 1px solid var(--panel-border);
-      border-radius: 4px;
-      padding: 8px;
+      background: var(--panel-surface);
+      border: 1px solid var(--panel-border-subtle);
+      border-radius: 8px;
+      padding: 10px;
       margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
-    .quest-list { display: flex; flex-direction: column; gap: 3px; max-height: 100px; overflow-y: auto; }
-    .quest-item { display: flex; align-items: center; gap: 6px; font-size: 9.5px; font-family: var(--font-mono); color: var(--text-muted); }
+    .quest-list { display: flex; flex-direction: column; gap: 4px; max-height: 100px; overflow-y: auto; }
+    .quest-item { display: flex; align-items: center; gap: 7px; font-size: 10px; font-family: var(--font-sans); color: var(--text-muted); }
     .quest-item.completed { color: var(--status-green); text-decoration: line-through; opacity: 0.8; }
 
     /* Form Inputs */
-    label { display: block; margin: 6px 0 2px; color: var(--text-dim); font-size: 10px; font-family: var(--font-mono); }
-    select, input[type=range] {
+    label { display: block; margin: 8px 0 3px; color: var(--text-dim); font-size: 10.5px; font-family: var(--font-sans); font-weight: 600; }
+    select {
       width: 100%;
-      background: #111722;
+      background: rgba(10, 14, 22, 0.85);
       border: 1px solid var(--panel-border);
       color: var(--text-main);
-      border-radius: 3px;
-      padding: 4px;
+      border-radius: 6px;
+      padding: 6px 8px;
       font-size: 11px;
-      font-family: var(--font-mono);
+      font-family: var(--font-sans);
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+    select:focus { border-color: var(--data-cyan); }
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      outline: none;
+      margin: 8px 0;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--data-cyan);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.8);
     }
 
     /* Toast */
     #toast {
       position: fixed;
-      top: 15px;
+      top: 18px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(13, 17, 23, 0.96);
+      background: rgba(10, 15, 24, 0.96);
       border: 1px solid var(--data-cyan);
       color: #fff;
-      padding: 8px 18px;
-      border-radius: 4px;
-      font-size: 11.5px;
-      font-family: var(--font-mono);
-      box-shadow: 0 4px 20px rgba(0, 229, 255, 0.25);
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      box-shadow: 0 8px 28px rgba(0, 229, 255, 0.25);
       display: none;
       z-index: 9999;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(12px);
     }
 
     #loading {
@@ -1112,13 +1353,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--bg-space);
+      /* Sembunyikan di bawah dashboard z-500 agar tidak bloking 3D Globe */
+      background: transparent;
       font-size: 15px;
       font-family: var(--font-mono);
-      color: var(--data-cyan);
+      color: transparent;
       text-align: center;
       padding: 30px;
-      z-index: 50;
+      z-index: 10;
+      pointer-events: none;
     }
     #loading.err { color: var(--status-red); }
 
@@ -1126,32 +1369,192 @@
     .map-portal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(7, 9, 13, 0.98);
+      background: rgba(7, 9, 14, 0.98);
       z-index: 1000;
       display: flex;
       align-items: center;
       justify-content: center;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(16px);
     }
     .portal-landing { display: flex; flex-direction: column; align-items: center; gap: 30px; padding: 40px 20px; max-width: 900px; width: 100%; }
     .portal-brand { text-align: center; }
     .brand-icon { font-size: 52px; margin-bottom: 8px; }
-    .brand-title { margin: 0; font-size: 26px; color: #fff; font-weight: 800; letter-spacing: 1px; font-family: var(--font-mono); }
-    .brand-sub { margin: 6px 0 0; font-size: 12.5px; color: var(--text-muted); font-family: var(--font-mono); }
+    .brand-title { margin: 0; font-size: 24px; color: #fff; font-weight: 800; letter-spacing: 0.5px; font-family: var(--font-sans); }
+    .brand-sub { margin: 6px 0 0; font-size: 13px; color: var(--text-muted); font-family: var(--font-sans); }
     .map-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; width: 100%; }
-    .map-card { background: #0f141d; border: 1px solid #233042; border-radius: 6px; padding: 18px; cursor: pointer; transition: all 0.2s ease; position: relative; }
-    .map-card:hover { transform: translateY(-2px); border-color: var(--data-cyan); box-shadow: 0 6px 24px rgba(0, 229, 255, 0.15); }
+    .map-card { background: rgba(14, 20, 30, 0.8); border: 1px solid var(--panel-border); border-radius: 8px; padding: 18px; cursor: pointer; transition: all 0.2s ease; position: relative; }
+    .map-card:hover { transform: translateY(-2px); border-color: var(--data-cyan); box-shadow: 0 8px 28px rgba(0, 229, 255, 0.15); }
     .map-card.placeholder { border-style: dashed; opacity: 0.4; cursor: default; }
     .card-code { font-size: 18px; font-weight: 800; color: var(--data-cyan); font-family: var(--font-mono); }
-    .card-title { font-size: 12px; color: #e2e8f0; margin: 6px 0 8px; line-height: 1.4; }
-    .card-meta { font-size: 10px; color: var(--text-dim); font-family: var(--font-mono); display: flex; gap: 6px; }
-    .card-regions { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; border-top: 1px solid #1a2533; padding-top: 8px; margin-top: 8px; }
-    .card-top-badge { position: absolute; top: 12px; right: 12px; padding: 2px 7px; border-radius: 3px; font-size: 9.5px; font-family: var(--font-mono); font-weight: 700; }
-    .ready-badge { background: #00e5ff18; color: var(--data-cyan); border: 1px solid #00e5ff44; }
-    .placeholder-badge { background: #37415122; color: #64748b; border: 1px solid #37415144; }
+    .card-title { font-size: 12.5px; font-weight: 600; color: #e2e8f0; margin: 6px 0 8px; line-height: 1.4; font-family: var(--font-sans); }
+    .card-meta { font-size: 10.5px; color: var(--text-dim); font-family: var(--font-mono); display: flex; gap: 6px; }
+    .card-regions { display: flex; justify-content: space-between; align-items: center; font-size: 11px; border-top: 1px solid var(--panel-border-subtle); padding-top: 8px; margin-top: 8px; }
+    .card-top-badge { position: absolute; top: 12px; right: 12px; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; font-family: var(--font-mono); font-weight: 700; }
+    .ready-badge { background: rgba(0, 229, 255, 0.1); color: var(--data-cyan); border: 1px solid rgba(0, 229, 255, 0.3); }
+    .placeholder-badge { background: rgba(255, 255, 255, 0.04); color: #64748b; border: 1px solid rgba(255, 255, 255, 0.08); }
   </style>
 </head>
 <body>
+
+<!-- =========================================================================
+     MARS GEOLOGICAL MAP EXPLORATION — 3D PLANETARY DASHBOARD
+     ========================================================================= -->
+<div id="dashboard-root">
+  <div class="dashboard-container">
+
+    <!-- 1. TOP MINIMALIST NAVIGATION -->
+    <header class="dash-top-nav">
+      <div class="nav-left">
+        <span class="nav-dots">•••</span>
+        <span class="nav-brand-title font-display">MARSMIND</span>
+      </div>
+      <div class="nav-right">
+        <button id="dashHelpBtn" class="nav-text-btn">HELP</button>
+        <div class="nav-status-indicator">
+          <span class="status-pulse-dot"></span>
+          <span>TELEMETRY ONLINE: VM-001</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 2. EXPANSIVE HERO STAGE (WEBGL BACKGROUND + FLOATING OVERLAYS) -->
+    <section class="globe-hero-stage">
+
+      <!-- Full-bleed 3D Three.js Canvas Container -->
+      <div id="marsGlobeCanvasContainer" class="globe-canvas-wrap"></div>
+
+      <!-- Dynamic Bracket Connecting SVG Line -->
+      <svg id="globeCalloutSvg" class="stage-bracket-svg">
+        <path id="calloutBracketPath" d="" fill="none" stroke="#FF8955" stroke-width="1.6" stroke-linecap="round"/>
+        <circle id="calloutStartDot" cx="0" cy="0" r="3.5" fill="#FFFFFF"/>
+        <circle id="calloutEndDot" cx="0" cy="0" r="3" fill="#FF8955"/>
+      </svg>
+
+      <!-- Floating Left: Clean Typography -->
+      <div class="stage-floating-left">
+        <div class="tag-meta-line">NASA · USGS PLANETARY GEOLOGIC MAPPING</div>
+        <h1 class="stage-main-title">Mars Geological Map Exploration</h1>
+        <div class="stage-agency-credit">
+          <div class="credit-label">Official Geological Database: <b>USGS Astrogeology GIS Hub</b></div>
+          <a href="https://astrogeology-usgs.hub.arcgis.com/pages/interactive-maps-mars" target="_blank" class="btn-usgs-left" id="btnUsgsLeft">
+            <span>Explore USGS Planetary Mapping ↗</span>
+          </a>
+        </div>
+        <nav id="dashboardMapList" class="dashboard-map-list" aria-label="Select a Mars map">
+          <h2 class="dashboard-map-list-title">AVAILABLE MAPS</h2>
+          <div class="dashboard-map-list-items"></div>
+        </nav>
+      </div>
+
+      <!-- Floating Right: USGS Geologic Map Dynamic Callout Card -->
+      <div class="stage-floating-right">
+        <div id="calloutCard" class="callout-card">
+          <div class="callout-card-top">
+            <span class="callout-badge badge-ready">● 3D SIMULATOR READY</span>
+            <span id="calloutScale" class="callout-scale">1:15,000,000</span>
+          </div>
+          <h2 id="calloutLocation" class="callout-location">Valles Marineris &amp; Tharsis</h2>
+          <div id="calloutCodeTitle" class="callout-code-title">USGS I-1802A · Western Equatorial Region of Mars</div>
+          <div id="calloutAuthor" class="callout-author">David H. Scott &amp; Kenneth L. Tanaka (USGS / NASA)</div>
+
+          <div class="callout-specs-list">
+            <div class="callout-spec-item">
+              <span class="spec-label">Coordinates</span>
+              <span id="calloutCoords" class="spec-value">8.00° S / 285.00° E (75° W)</span>
+            </div>
+            <div class="callout-spec-item">
+              <span class="spec-label">Elevation</span>
+              <span id="calloutElevation" class="spec-value">-7,000 m to +21,287 m</span>
+            </div>
+            <div class="callout-spec-item">
+              <span class="spec-label">Geologic Era</span>
+              <span id="calloutEra" class="spec-value">Hesperian – Amazonian</span>
+            </div>
+            <div class="callout-spec-item">
+              <span class="spec-label">Stratigraphy</span>
+              <span id="calloutStratigraphy" class="spec-value">Basaltic Strata &amp; Tectonic Chasmata</span>
+            </div>
+          </div>
+
+          <p id="calloutDesc" class="callout-desc">
+            Official USGS geologic map covering the grand western Martian landscape: the immense Valles Marineris canyon system (>4,000 km), Olympus Mons volcano (21 km), and the volcanic plains of Tharsis. Directly synchronized with the 3D surface rover simulation.
+          </p>
+
+          <div class="callout-actions">
+            <button id="btnCalloutLaunch" class="btn-callout-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>LAUNCH 3D SIMULATION</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Bottom: Elliptical Rotation Guide -->
+      <div class="stage-floating-guide" title="Click and drag Mars globe for 360° rotation">
+        <div class="globe-orbit-guide">
+          <svg class="orbit-ellipse-svg" width="130" height="42" viewBox="0 0 130 42">
+            <ellipse cx="65" cy="21" rx="58" ry="16" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" stroke-dasharray="3,3"/>
+            <circle id="orbitDot" cx="123" cy="21" r="3.4" fill="#FF8955"/>
+          </svg>
+          <span class="orbit-guide-label">Rotate Mars Globe</span>
+          <span class="orbit-guide-hint">Drag to rotate 360° · Scroll to zoom</span>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</div>
+
+<!-- Telemetry Launch Sequence Overlay -->
+<div id="dash-init-overlay" class="dash-init-overlay" style="display: none;">
+  <div class="dash-init-content">
+    <div class="dash-init-spinner">
+      <div class="spinner-ring"></div>
+      <div class="spinner-core"></div>
+    </div>
+    <div class="dash-init-title font-display">INITIALIZING MARS 3D SIMULATOR</div>
+    <div class="dash-init-subtitle">CONNECTING AUTONOMOUS ROVER TELEMETRY TO SURFACE</div>
+    <div class="dash-init-progress-bar">
+      <div id="dashInitProgressBar" class="dash-init-progress-fill"></div>
+    </div>
+    <div id="dashInitStatusText" class="dash-init-status">LOADING HIGH-RESOLUTION DEM TERRAIN MODEL...</div>
+    <div class="dash-init-telemetry-logs" id="dashInitLogs">
+      <div>[INIT] NASA Deep Space Network Uplink: ESTABLISHED</div>
+      <div>[GEO] USGS Astrogeology I-1802A Map Datum: ALIGNED</div>
+      <div>[SWARM] 3 Autonomous Rover Swarm Units (Ares, GeoLab, Hermes): ONLINE</div>
+    </div>
+  </div>
+</div>
+
+<!-- Help Modal -->
+<div id="dashHelpModal" class="dash-help-modal" style="display: none;">
+  <div class="dash-help-backdrop"></div>
+  <div class="dash-help-panel">
+    <div class="dash-help-header">
+      <span class="dash-help-title font-display">MARS GEOLOGICAL EXPLORATION GUIDE</span>
+      <button id="dashHelpCloseBtn" class="dash-help-close">&times;</button>
+    </div>
+    <div class="dash-help-body">
+      <div class="help-section">
+        <h4>1. 3D MARS GLOBE CONTROLS</h4>
+        <ul>
+          <li><b>360° Rotation:</b> Left click &amp; drag anywhere across the screen to rotate Mars with realistic inertial physics.</li>
+          <li><b>Zoom In / Out:</b> Use mouse scroll or trackpad pinch. Calibrated with zero-clipping limits (4.3x to 7.6x distance).</li>
+          <li><b>3D Hotspot:</b> Dynamic telemetry pin at Valles Marineris coordinates (8.00° S, 285.00° E) connects live planetary data.</li>
+        </ul>
+      </div>
+      <div class="help-section">
+        <h4>2. MARS RECONNAISSANCE ORBITER (MRO)</h4>
+        <p>The elliptical orbit with pulsing telemetry beacon visualizes MRO's actual orbital path mapping MOLA topography and CTX imagery.</p>
+      </div>
+      <div class="help-section">
+        <h4>3. USGS GEOLOGIC MAP &amp; ROVER SIMULATION</h4>
+        <p>Active dataset <b>USGS I-1802A</b> maps grand formations across western Mars (Valles Marineris, Olympus Mons, Tharsis). Click <b>'LAUNCH 3D SIMULATION'</b> to deploy the autonomous 3-rover swarm directly onto the Martian surface.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="app"></div>
 <div id="loading">NASA / JPL Mars Jezero Exploration Workstation Memuat Data…</div>
 <div id="toast"></div>
@@ -1160,32 +1563,49 @@
      TOP-LEFT: MINIMAL WORKSTATION TOOLBAR & DROPDOWN SETTINGS
      (Left side remains completely open for Mars exploration)
      ========================================================================= -->
-<div id="topControlBar">
-  <button id="openMapPortalBtn" class="top-chip" style="cursor:pointer;background:#0d1a2d;border-color:#1e3a63;color:#e2e8f0;font-weight:700;">
-    🗺️ PETA GEOLOGI
+<div id="topNavWrapper" class="top-nav-wrapper" style="display:none">
+  <!-- Floating Action Button (FAB) to toggle toolbar -->
+  <button id="topNavFab" class="top-nav-fab" title="Sembunyikan / Tampilkan Bilah Kontrol (H)">
+    <span class="fab-icon-symbol">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/></svg>
+    </span>
+    <span class="fab-text">KONTROL</span>
   </button>
-  <button id="openMinimapBtn" class="top-chip" style="cursor:pointer;background:#0d233a;border-color:#00e5ff;color:#00e5ff;font-weight:700;">
-    🛰️ PETA TAKTIS (M)
-  </button>
-  <button id="toggleBackpackBtn" class="top-chip" style="cursor:pointer;background:#0c2236;border-color:#00e5ff;color:#00e5ff;font-weight:800;letter-spacing:0.3px;box-shadow:0 0 12px rgba(0,229,255,0.25);">
-    🎒 BACKPACK LABORATORIUM
-  </button>
-  <button id="toggleSettingsBtn" class="top-chip" style="cursor:pointer;">
-    ⚙️ SIMULASI &amp; KAMERA ▼
-  </button>
-  <div class="top-chip">
-    <span>SPD: <b id="topSpeed">0.0 m/s</b></span>
-    <span>ELV: <b id="topElev">0 m</b></span>
-    <span>FPS: <b id="fps">60</b></span>
+
+  <div id="topControlBar" class="top-control-bar">
+    <button id="openMapPortalBtn" class="top-chip btn-with-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+      <span>PETA GEOLOGI</span>
+    </button>
+    <button id="openMinimapBtn" class="top-chip btn-cyan btn-with-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M13 7 9 3 5 7l4 4"/><path d="m17 11 4 4-4 4-4-4"/><path d="m8 12 4 4 6-6-4-4Z"/><path d="m16 8 3-3"/><path d="M9 21a6 6 0 0 0-6-6"/></svg>
+      <span>PETA TAKTIS (M)</span>
+    </button>
+    <button id="toggleBackpackBtn" class="top-chip btn-cyan btn-with-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M8 21v-5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5"/><line x1="8" y1="10" x2="16" y2="10"/></svg>
+      <span>BACKPACK LABORATORIUM</span>
+    </button>
+    <button id="toggleSettingsBtn" class="top-chip btn-with-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>SIMULASI &amp; KAMERA</span>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="top-chip telemetry-chip">
+      <span>SPD: <b id="topSpeed">0.0 m/s</b></span>
+      <span>ELV: <b id="topElev">0 m</b></span>
+      <span>FPS: <b id="fps">60</b></span>
+    </div>
+    <div class="top-chip" id="inspect" style="display:none;"></div>
   </div>
-  <div class="top-chip" id="inspect" style="display:none;"></div>
 </div>
 
 <!-- Compact Simulation Settings Dropdown -->
 <div id="simSettingsModal" class="panel">
   <h3>
     <span>Parameter Simulasi</span>
-    <button id="closeSettingsBtn" style="background:transparent;border:0;color:var(--text-dim);cursor:pointer;font-family:var(--font-mono);">✕</button>
+    <button id="closeSettingsBtn" style="background:transparent;border:0;color:var(--text-dim);cursor:pointer;display:inline-flex;align-items:center;padding:2px;" title="Tutup">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   </h3>
   <label>Mode Kamera</label>
   <select id="cam">
@@ -1223,7 +1643,10 @@
     <label><input id="slope" type="checkbox"> Slope Map (Gradien Kemiringan)</label>
     <label><input id="tint" type="checkbox" checked> Pewarnaan Mars-Tone</label>
   </div>
-  <button id="resetRover" style="margin-top:8px;background:#1e293b;border:1px solid #334155;color:#fff;border-radius:3px;padding:6px;width:100%;cursor:pointer;font-family:var(--font-mono);">↺ Reset Posisi Awal</button>
+  <button id="resetRover" class="btn-sec-action btn-with-icon" style="margin-top:12px;width:100%;font-weight:600;justify-content:center;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    <span>Reset Posisi Awal</span>
+  </button>
 </div>
 
 <!-- =========================================================================
@@ -1232,21 +1655,37 @@
 <div id="minimapWidget" class="minimap-widget">
   <div class="minimap-header">
     <div class="minimap-title-group">
-      <span class="minimap-badge">🛰️ MINIMAP TAKTIS</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--data-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M13 7 9 3 5 7l4 4"/><path d="m17 11 4 4-4 4-4-4"/><path d="m8 12 4 4 6-6-4-4Z"/><path d="m16 8 3-3"/><path d="M9 21a6 6 0 0 0-6-6"/></svg>
+      <span class="minimap-badge">MINIMAP TAKTIS</span>
       <span id="miniActiveRoverName" class="minimap-rover-tag">ROV-01</span>
     </div>
     <div class="minimap-controls">
-      <button id="miniLayerBtn" class="mini-icon-btn" title="Ganti Lapisan Peta (Orto / Topo / Lereng / Hybrid)">🛰️</button>
-      <button id="miniCenterBtn" class="mini-icon-btn" title="Pusatkan ke Rover">🎯</button>
-      <button id="miniZoomInBtn" class="mini-icon-btn" title="Perbesar (Zoom In)">+</button>
-      <button id="miniZoomOutBtn" class="mini-icon-btn" title="Perkecil (Zoom Out)">-</button>
-      <button id="miniMaximizeBtn" class="mini-icon-btn max-btn" title="Maksimalkan Peta (M)">⛶</button>
-      <button id="miniCollapseBtn" class="mini-icon-btn" title="Sembunyikan / Buka">−</button>
+      <button id="miniLayerBtn" class="mini-icon-btn" title="Ganti Lapisan Peta (Orto / Topo / Lereng / Hybrid)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-8.58 3.91a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-8.58 3.91a2 2 0 0 1-1.66 0L2 17.5"/></svg>
+      </button>
+      <button id="miniCenterBtn" class="mini-icon-btn" title="Pusatkan ke Rover">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></svg>
+      </button>
+      <button id="miniZoomInBtn" class="mini-icon-btn" title="Perbesar (Zoom In)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button id="miniZoomOutBtn" class="mini-icon-btn" title="Perkecil (Zoom Out)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button id="miniMaximizeBtn" class="mini-icon-btn max-btn" title="Maksimalkan Peta (M)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      </button>
+      <button id="miniCollapseBtn" class="mini-icon-btn" title="Sembunyikan / Buka">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><polyline points="18 15 12 9 6 15"/></svg>
+      </button>
     </div>
   </div>
   <div id="minimapBody" class="minimap-body">
     <canvas id="minimapCanvas"></canvas>
-    <div class="minimap-compass">N</div>
+    <div class="minimap-compass" style="display:flex;flex-direction:column;align-items:center;">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--nasa-red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><polygon points="12 2 19 21 12 17 5 21 12 2"/></svg>
+      <span style="font-size:7.5px;font-weight:800;color:var(--data-cyan);margin-top:1px;">N</span>
+    </div>
     <div id="miniScaleBar" class="minimap-scale-bar">1 km ──</div>
   </div>
   <div id="minimapFooter" class="minimap-footer">
@@ -1270,10 +1709,22 @@
 
     <div class="max-header-center">
       <div class="layer-pill-group">
-        <button class="layer-btn active" data-layer="ortho">🛰️ Citra Orto CTX</button>
-        <button class="layer-btn" data-layer="dem">🏔️ DEM Topografi</button>
-        <button class="layer-btn" data-layer="slope">📐 Kemiringan Lereng</button>
-        <button class="layer-btn" data-layer="hybrid">🌐 Orto + Kontur</button>
+        <button class="layer-btn active btn-with-icon" data-layer="ortho">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M13 7 9 3 5 7l4 4"/><path d="m17 11 4 4-4 4-4-4"/><path d="m8 12 4 4 6-6-4-4Z"/><path d="m16 8 3-3"/><path d="M9 21a6 6 0 0 0-6-6"/></svg>
+          <span>Citra Orto CTX</span>
+        </button>
+        <button class="layer-btn btn-with-icon" data-layer="dem">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+          <span>DEM Topografi</span>
+        </button>
+        <button class="layer-btn btn-with-icon" data-layer="slope">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="m21.5 20-19 0"/><path d="M2.5 20 21.5 5"/><path d="M7 20a5 5 0 0 1 3.5-4.8"/></svg>
+          <span>Kemiringan Lereng</span>
+        </button>
+        <button class="layer-btn btn-with-icon" data-layer="hybrid">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-8.58 3.91a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-8.58 3.91a2 2 0 0 1-1.66 0L2 17.5"/></svg>
+          <span>Orto + Kontur</span>
+        </button>
       </div>
       <label class="tint-toggle-label">
         <input type="checkbox" id="maxTintCheck" checked> Mars Tone
@@ -1287,9 +1738,18 @@
         <label><input type="checkbox" id="chkShowWaypoints" checked> Waypoint Misi</label>
         <label><input type="checkbox" id="chkShowGrid" checked> Grid Koordinat</label>
       </div>
-      <button id="maxMapFitBtn" class="max-action-btn" title="Lihat Seluruh Area Kawah Jezero (88×101 km)">🔍 Seluruh Peta</button>
-      <button id="maxMapCenterRoverBtn" class="max-action-btn" title="Pusatkan ke Rover Aktif">🎯 Pusatkan Rover</button>
-      <button id="maxMapCloseBtn" class="max-close-btn" title="Perkecil / Tutup Peta (M / Esc)">🗗 Perkecil (M)</button>
+      <button id="maxMapFitBtn" class="max-action-btn btn-with-icon" title="Lihat Seluruh Area Kawah Jezero (88×101 km)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+        <span>Seluruh Peta</span>
+      </button>
+      <button id="maxMapCenterRoverBtn" class="max-action-btn btn-with-icon" title="Pusatkan ke Rover Aktif">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></svg>
+        <span>Pusatkan Rover</span>
+      </button>
+      <button id="maxMapCloseBtn" class="max-close-btn btn-with-icon" title="Perkecil / Tutup Peta (M / Esc)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>
+        <span>Perkecil (M)</span>
+      </button>
     </div>
   </header>
 
@@ -1308,9 +1768,15 @@
 
       <!-- Floating Zoom Controls -->
       <div class="canvas-floating-controls">
-        <button id="maxZoomInBtn" class="float-btn" title="Zoom In">+</button>
-        <button id="maxZoomOutBtn" class="float-btn" title="Zoom Out">-</button>
-        <button id="maxZoomResetBtn" class="float-btn" title="Reset Zoom">↺</button>
+        <button id="maxZoomInBtn" class="float-btn" title="Zoom In">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button id="maxZoomOutBtn" class="float-btn" title="Zoom Out">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button id="maxZoomResetBtn" class="float-btn" title="Reset Zoom">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
       </div>
 
       <!-- Dynamic Scale Bar & North Indicator -->
@@ -1319,16 +1785,26 @@
         <div id="dynamicScaleLine"></div>
       </div>
       <div class="canvas-compass-indicator">
-        <div class="compass-arrow">▲</div>
-        <div>N</div>
+        <div class="compass-arrow" style="display:flex;align-items:center;justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--nasa-red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><polygon points="12 2 19 21 12 17 5 21 12 2"/></svg>
+        </div>
+        <div style="font-size:10px;font-weight:800;color:var(--data-cyan);margin-top:2px;">N</div>
       </div>
 
       <!-- Click Target Action Pill -->
       <div id="mapTargetActionPill" class="target-action-pill" style="display:none;">
         <span id="targetPillTitle">Target: 77.45°E, 18.44°N</span>
-        <button id="targetSetWaypointBtn" class="pill-act-btn">📍 Tandai Waypoint</button>
-        <button id="targetTeleportCamBtn" class="pill-act-btn">🔭 Lihat di 3D</button>
-        <button id="targetClosePillBtn" class="pill-close-btn">✕</button>
+        <button id="targetSetWaypointBtn" class="pill-act-btn btn-with-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>Tandai Waypoint</span>
+        </button>
+        <button id="targetTeleportCamBtn" class="pill-act-btn btn-with-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>Lihat di 3D</span>
+        </button>
+        <button id="targetClosePillBtn" class="pill-close-btn">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
     </div>
 
@@ -1371,15 +1847,24 @@
         <div class="side-card-title">OBJEK &amp; STASIUN MISI</div>
         <div id="sidebarMissionObjects" class="mission-objects-box">
           <div class="m-obj-item">
-            <span>📍 Sampel Geologi Terkini</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--data-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Sampel Geologi Terkini</span>
+            </span>
             <span id="sideSampleStatus" style="color:#64748b">Belum Ada</span>
           </div>
           <div class="m-obj-item">
-            <span>🔬 Stasiun Lab Sains</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0 0-14h-1"/><path d="M9 14h2"/><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/></svg>
+              <span>Stasiun Lab Sains</span>
+            </span>
             <span id="sideLabStatus" style="color:#64748b">Belum Dibangun</span>
           </div>
           <div class="m-obj-item">
-            <span>🚛 Status Kargo Hermes</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--status-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-5.28a2 2 0 0 0-.586-1.414L18.414 7.3A2 2 0 0 0 17 6.72H14v11.28"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+              <span>Status Kargo Hermes</span>
+            </span>
             <span id="sideCargoStatus" style="color:#64748b">Kosong</span>
           </div>
         </div>
@@ -1391,7 +1876,7 @@
 <!-- =========================================================================
      RIGHT-SIDE: NASA ROBOT DETAIL PANEL + INTERACTIVE 3D VIEWER + HISTORY TRACK
      ========================================================================= -->
-<div id="robotDetailPanel" class="panel">
+<div id="robotDetailPanel" class="panel" style="display:none">
   <!-- Agency & Expedition Header -->
   <div class="agency-header">
     <div>
@@ -1407,15 +1892,24 @@
   <!-- Robot Selection Tabs (1: Ares, 2: GeoLab, 3: Hermes) -->
   <div class="robot-selector-grid" id="robotSelector">
     <button class="r-btn active" data-index="0">
-      <span>🗺️ <b>01. ARES</b></span>
+      <span style="display:flex;align-items:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--data-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+        <b>01. ARES</b>
+      </span>
       <span style="color:var(--data-cyan)">MAPPER</span>
     </button>
     <button class="r-btn" data-index="1">
-      <span>🔬 <b>02. GEOLAB</b></span>
+      <span style="display:flex;align-items:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ff3b5c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0 0-14h-1"/><path d="M9 14h2"/><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/></svg>
+        <b>02. GEOLAB</b>
+      </span>
       <span style="color:#ff3b5c">SCIENCE</span>
     </button>
     <button class="r-btn" data-index="2">
-      <span>🚛 <b>03. HERMES</b></span>
+      <span style="display:flex;align-items:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--status-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-5.28a2 2 0 0 0-.586-1.414L18.414 7.3A2 2 0 0 0 17 6.72H14v11.28"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+        <b>03. HERMES</b>
+      </span>
       <span style="color:var(--status-green)">CARGO</span>
     </button>
   </div>
@@ -1425,10 +1919,20 @@
     <div class="viewer-toolbar">
       <span>INSPECTION VIEWER · 3D</span>
       <div class="viewer-tools-group">
-        <button id="viewerResetBtn" class="viewer-btn" title="Reset View Framing">↺ Reset</button>
-        <button id="viewerZoomInBtn" class="viewer-btn" title="Zoom In">+</button>
-        <button id="viewerZoomOutBtn" class="viewer-btn" title="Zoom Out">-</button>
-        <button id="viewerRotateBtn" class="viewer-btn" title="Toggle Auto Turntable">⟳ Auto</button>
+        <button id="viewerResetBtn" class="viewer-btn btn-with-icon" title="Reset View Framing">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Reset</span>
+        </button>
+        <button id="viewerZoomInBtn" class="viewer-btn" title="Zoom In">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button id="viewerZoomOutBtn" class="viewer-btn" title="Zoom Out">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button id="viewerRotateBtn" class="viewer-btn btn-with-icon" title="Toggle Auto Turntable">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.99 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          <span>Auto</span>
+        </button>
       </div>
     </div>
     <div id="roverViewerContainer">
@@ -1460,7 +1964,11 @@
       <tr><td>Posisi Terkini</td><td id="histCurrentCoord">-</td></tr>
       <tr><td>Jumlah Waypoint</td><td id="histWaypointCount">1 Titik</td></tr>
     </table>
-    <button id="toggleHistLogBtn" class="btn-subtle">📜 Buka Riwayat Lintasan (Log Telemetri) ▼</button>
+    <button id="toggleHistLogBtn" class="btn-subtle" style="display:flex;align-items:center;justify-content:center;gap:6px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+      <span>Buka Riwayat Lintasan (Log Telemetri)</span>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
     <div id="histLogContainer">
       <div style="padding:3px 6px;background:#111822;font-weight:700;color:var(--text-muted);display:grid;grid-template-columns:24px 50px 1fr 45px;">
         <span>#</span><span>WAKTU</span><span>KOORDINAT (LON/LAT)</span><span style="text-align:right">SPD</span>
@@ -1508,34 +2016,47 @@
 
   <!-- Contextual Action Controls -->
   <div class="action-card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span id="act-role-title" style="font-weight:700;font-size:11px;font-family:var(--font-mono);color:#fff;">🗺️ Ares Mapper</span>
-      <span id="act-role-status" style="font-size:9.5px;font-family:var(--font-mono);color:var(--data-cyan);">Siap</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span id="act-role-title" style="font-weight:700;font-size:11.5px;color:#fff;display:flex;align-items:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--data-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+        <span>Ares Mapper (Eksplorasi)</span>
+      </span>
+      <span id="act-role-status" style="font-size:10px;font-family:var(--font-mono);color:var(--data-cyan);">Siap</span>
     </div>
-    <button id="mainActionBtn" class="btn-main-action">📍 Tandai Waypoint Sampel (Space)</button>
-    <button id="secActionBtn" class="btn-sec-action" style="display:none;">🚛 Panggil Hermes Transport (C)</button>
+    <button id="mainActionBtn" class="btn-main-action btn-with-icon" style="justify-content:center;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+      <span>Tandai Waypoint Sampel (Space)</span>
+    </button>
+    <button id="secActionBtn" class="btn-sec-action btn-with-icon" style="display:none;justify-content:center;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-5.28a2 2 0 0 0-.586-1.414L18.414 7.3A2 2 0 0 0 17 6.72H14v11.28"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+      <span>Panggil Hermes Transport (C)</span>
+    </button>
   </div>
 
   <!-- Quest & Science Checklist -->
   <div class="quest-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span class="section-title">TARGET &amp; RISET SAINS</span>
-      <span id="scienceScore" style="color:var(--status-green);font-family:var(--font-mono);font-size:10px;">0 Poin</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span class="section-title" style="margin-bottom:0;">TARGET &amp; RISET SAINS</span>
+      <span id="scienceScore" style="color:var(--status-green);font-family:var(--font-mono);font-size:10.5px;font-weight:700;">0 Poin</span>
     </div>
     <div class="quest-list" id="questList"></div>
   </div>
 
   <!-- Data Sources Credits Drawer -->
-  <button id="toggleDetailsBtn" class="btn-subtle" style="margin-bottom:6px;">📊 Sumber Data NASA &amp; USGS Geologi ▼</button>
-  <div id="telemetryDetails" style="display:none;background:#090d12;border:1px solid #1e293b;border-radius:3px;padding:8px;font-size:10px;font-family:var(--font-mono);color:var(--text-dim);margin-bottom:10px;">
-    <ul id="sources" style="margin:0;padding-left:14px;line-height:1.4;"></ul>
+  <button id="toggleDetailsBtn" class="btn-subtle" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+    <span>Sumber Data NASA &amp; USGS Geologi</span>
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="aerospace-icon"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div id="telemetryDetails" style="display:none;background:rgba(8,12,18,0.7);border:1px solid var(--panel-border-subtle);border-radius:6px;padding:10px;font-size:10.5px;color:var(--text-dim);margin-bottom:10px;">
+    <ul id="sources" style="margin:0;padding-left:14px;line-height:1.5;"></ul>
   </div>
 </div>
 
 <!-- =========================================================================
      BOTTOM QUICK KEYBOARD CONTROLS
      ========================================================================= -->
-<div id="help">
+<div id="help" style="display:none">
   <b>Setir:</b> <kbd>W A S D</kbd> · <b>Peta:</b> <kbd>M</kbd> · <b>Turbo:</b> <kbd>Shift</kbd> · <b>Pilih Robot:</b> <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> / <kbd>Tab</kbd> · <b>Aksi:</b> <kbd>Space</kbd> · <b>Lab:</b> <kbd>B</kbd> · <b>Transport:</b> <kbd>C</kbd>
 </div>
 
