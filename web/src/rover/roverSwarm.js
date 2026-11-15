@@ -15,7 +15,7 @@ export const SWARM_ROBOTS = [
     name: 'Ares Mapper',
     role: ROVER_ROLES.SURFACE_MAPPING,
     missionTitle: 'Surface Mapping & Exploration',
-    icon: '🗺️',
+    icon: 'map',
     accent: 0x00d4ff, // Cyan
     accentHex: '#00d4ff',
     startOffset: [0, 0],
@@ -28,7 +28,7 @@ export const SWARM_ROBOTS = [
     name: 'Curiosity GeoLab',
     role: ROVER_ROLES.GEOLOGICAL_INVESTIGATION,
     missionTitle: 'Geological Investigation',
-    icon: '🔬',
+    icon: 'microscope',
     accent: 0xff3b5c, // Crimson
     accentHex: '#ff3b5c',
     startOffset: [32, -22],
@@ -41,7 +41,7 @@ export const SWARM_ROBOTS = [
     name: 'Hermes Transport',
     role: ROVER_ROLES.TRANSPORT_SUPPORT,
     missionTitle: 'Mission Transport & Support',
-    icon: '🚛',
+    icon: 'truck',
     accent: 0x00ff88, // Emerald Green
     accentHex: '#00ff88',
     startOffset: [-32, -32],
@@ -211,6 +211,7 @@ export class RoverSwarm {
       leader.agent.mappedKm2 += (Math.abs(leader.physics.speed) * dt * 0.1) / 1000;
     }
     this.#updatePose(leader);
+    this.#updateWheelAnimation(leader, dt);
 
     // 2. Process companion rovers
     for (let i = 0; i < this.rovers.length; i++) {
@@ -250,6 +251,7 @@ export class RoverSwarm {
       }
       companion.physics.step(dt, input);
       this.#updatePose(companion);
+      this.#updateWheelAnimation(companion, dt);
     }
 
     // 3. Update dynamic visual animations
@@ -470,5 +472,134 @@ export class RoverSwarm {
     const wheelOffset = 0.4 * S * 0.85;
     this._tempPos.set(w.x, w.y, w.z).addScaledVector(this._up, wheelOffset);
     rover.mesh.position.copy(this._tempPos);
+  }
+
+  #updateWheelAnimation(rover, dt) {
+    const wheels = rover.mesh?.userData?.wheels;
+    if (!wheels || !Array.isArray(wheels)) return;
+
+    const p = rover.physics;
+    const speed = p.speed || 0;
+    const steer = p.steer || 0;
+    const S = this.visualScale || 15;
+
+    // Physical wheel radius on the 3D ground (rover is scaled by visualScale S)
+    const effectiveRadius = 0.42 * S;
+
+    // Rolling rotation: rolling forward towards -Z requires negative X rotation
+    const dRoll = -(speed * dt) / effectiveRadius;
+
+    // Corner-wheel Ackermann steering: max ~28 degrees (0.48 radians)
+    // Negative steer turns front wheels to the right (+X)
+    const targetSteerAngle = -steer * 0.48;
+
+    const cosH = Math.cos(p.heading);
+    const sinH = Math.sin(p.heading);
+
+    for (let i = 0; i < wheels.length; i++) {
+      const w = wheels[i];
+
+      // 1. Roll spin group (all 6 wheels roll realistically based on speed & differential steering)
+      const spinObj = w.spin || w.rotation;
+      if (spinObj) {
+        // Differential steering speed: outer wheels spin slightly faster on turns
+        const diffMult = 1.0 + (steer * (w.side || 0) * 0.28);
+        // Active pivot / skid steering roll when vehicle is turning in place
+        const turnRoll = (Math.abs(speed) < 0.25 && Math.abs(steer) > 0.05)
+          ? -(steer * (w.side || 1) * 2.2 * dt)
+          : 0;
+        spinObj.rotation.x = (spinObj.rotation.x + dRoll * diffMult + turnRoll) % (Math.PI * 2);
+      }
+
+      // 2. Corner wheels steering (Ackermann angle on front/rear, middle straight)
+      const steerObj = w.steer || w.pivot;
+      if (steerObj) {
+        let steerTarget = 0;
+        if (w.station === 'front') {
+          steerTarget = targetSteerAngle;
+        } else if (w.station === 'rear') {
+          steerTarget = -targetSteerAngle;
+        }
+        steerObj.rotation.y += (steerTarget - steerObj.rotation.y) * Math.min(1, dt * 14);
+      }
+
+      // 3. Real Mars DEM Terrain Elevation Sampling & Physical Springs ("Per")
+      // Calculate individual wheel location in projected terrain coordinates (East, North)
+      const wEast = p.X + (cosH * w.x * S) - (sinH * w.z * S);
+      const wNorth = p.Y - (sinH * w.x * S) - (cosH * w.z * S);
+
+      const terrainH = p.sampleElevation(wEast, wNorth);
+      const dx = wEast - p.X;
+      const dy = wNorth - p.Y;
+      const basePlaneH = p.elevation + (dx * (p.grad ? p.grad[0] : 0)) + (dy * (p.grad ? p.grad[1] : 0));
+      const deltaH = terrainH - basePlaneH;
+
+      // Convert terrain elevation delta to model units
+      const rawDisp = THREE.MathUtils.clamp(deltaH / S, -0.14, 0.16);
+
+      // High-frequency micro-rumble when rolling over Mars bedrock & regolith
+      const isDriving = Math.abs(speed) > 0.08;
+      const rumble = isDriving
+        ? (Math.sin(this._animTime * 36 + i * 2.1) * 0.010 + Math.cos(this._animTime * 50 + i * 1.5) * 0.006) * Math.min(1, Math.abs(speed) / 4)
+        : 0;
+
+      const targetDisp = rawDisp + rumble;
+      w.compression = (w.compression ?? 0) + (targetDisp - (w.compression ?? 0)) * Math.min(1, dt * 15);
+
+      // Move wheel vertical suspension travel pivot
+      if (w.pivot) {
+        w.pivot.position.y = w.compression;
+      }
+
+      // Dynamic spring compression/rebound (3D coiled spring geometry)
+      if (w.springCoil) {
+        const restH = w.restSpringHeight || 0.22;
+        const currentH = Math.max(0.06, Math.min(0.34, restH - w.compression));
+        const scaleY = currentH / restH;
+        w.springCoil.scale.set(1.0, scaleY, 1.0);
+      }
+
+      // Chrome shock damper piston sliding inside outer cylinder
+      if (w.shockPiston) {
+        w.shockPiston.position.y = 0.14 + w.compression * 0.35;
+      }
+    }
+
+    // 4. Dynamic Rocker-Bogie Suspension Articulation
+    const hooks = rover.mesh?.userData?.suspensionHooks;
+    if (hooks && wheels.length >= 6) {
+      // Wheels order: [FL, FR, ML, MR, RL, RR]
+      const cFL = wheels[0].compression || 0;
+      const cFR = wheels[1].compression || 0;
+      const cML = wheels[2].compression || 0;
+      const cMR = wheels[3].compression || 0;
+      const cRL = wheels[4].compression || 0;
+      const cRR = wheels[5].compression || 0;
+
+      // Left side Rocker & Bogie pitch
+      const leftRockerTarget = -((cFL - (cML + cRL) * 0.5) * 0.7);
+      const leftBogieTarget = -((cML - cRL) * 0.65);
+
+      // Right side Rocker & Bogie pitch
+      const rightRockerTarget = -((cFR - (cMR + cRR) * 0.5) * 0.7);
+      const rightBogieTarget = -((cMR - cRR) * 0.65);
+
+      if (hooks.leftRocker) {
+        hooks.leftRocker.rotation.x += (leftRockerTarget - hooks.leftRocker.rotation.x) * Math.min(1, dt * 8);
+      }
+      if (hooks.leftBogie) {
+        hooks.leftBogie.rotation.x += (leftBogieTarget - hooks.leftBogie.rotation.x) * Math.min(1, dt * 8);
+      }
+      if (hooks.rightRocker) {
+        hooks.rightRocker.rotation.x += (rightRockerTarget - hooks.rightRocker.rotation.x) * Math.min(1, dt * 8);
+      }
+      if (hooks.rightBogie) {
+        hooks.rightBogie.rotation.x += (rightBogieTarget - hooks.rightBogie.rotation.x) * Math.min(1, dt * 8);
+      }
+      if (hooks.diffBar) {
+        const diffTilt = (leftRockerTarget - rightRockerTarget) * 0.45;
+        hooks.diffBar.rotation.z += (diffTilt - hooks.diffBar.rotation.z) * Math.min(1, dt * 8);
+      }
+    }
   }
 }

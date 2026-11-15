@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OLYMPUS_REGIONS } from './olympusMonsTerrain.js';
 
 /** Forces all sprites inside a group to always render on top of terrain. */
 function forceSpritesOnTop(group, renderOrder = 999) {
@@ -312,13 +313,21 @@ export class RegionMarkers {
     this.lift = options.lift ?? 2.5;
     this.cells = options.cells ?? 192;
     this.markers = [];
-    this.proximityRadius = 3000; // meters — jarak untuk trigger popup
+    this.olympusMarkers = [];
+    this.activeMapId = 'usgs-i-1802-a';
+    this.proximityRadius = 3200;
     this.activePopup = null;
     this.uTime = { value: 0 };
     this._glowTex = null;
 
     this.#createPopupDOM();
     this.#buildMarkers();
+    this.#buildOlympusMarkers();
+  }
+
+  setMapMode(mapId) {
+    this.activeMapId = mapId;
+    this.setVisible(!this._disabled);
   }
 
   #createPopupDOM() {
@@ -382,10 +391,50 @@ export class RegionMarkers {
     }
   }
 
+  #buildOlympusMarkers() {
+    this.olympusMarkers = [];
+    const hf = this.hf;
+    const centerX = hf.left + (hf.cols * hf.cell) / 2;
+    const centerY = hf.top - (hf.rows * hf.cell) / 2;
+
+    for (const region of OLYMPUS_REGIONS) {
+      const cx = centerX + region.ox;
+      const cy = centerY + region.oy;
+      const cw = { x: 0, y: 0, z: 0 };
+      this.frame.toWorld(cx, cy, hf.sample(cx, cy), cw);
+
+      const group = new THREE.Group();
+      group.position.set(cw.x, cw.y, cw.z);
+
+      const beam = this.#addBeacon(group, region.color, 0, region.beaconH);
+      this.#addLabel(group, region.name, region.color, region.beaconH + 130);
+      this.#addZoneRing(group, region, cx, cy, cw);
+
+      group.visible = (this.activeMapId === 'usgs-sim-3470');
+      this.scene.add(group);
+
+      this.olympusMarkers.push({
+        id: region.id,
+        name: region.title,
+        desc: region.desc,
+        color: region.color,
+        projX: cx,
+        projY: cy,
+        group,
+        beam,
+        phase: Math.random() * TAU,
+      });
+    }
+  }
+
   setVisible(visible) {
     this._disabled = !visible;
+    const isOlympus = (this.activeMapId === 'usgs-sim-3470');
     for (const m of this.markers) {
-      if (m.group) m.group.visible = visible;
+      if (m.group) m.group.visible = visible && !isOlympus;
+    }
+    for (const om of this.olympusMarkers) {
+      if (om.group) om.group.visible = visible && isOlympus;
     }
     if (this.popupEl) this.popupEl.style.display = 'none';
   }
@@ -528,22 +577,30 @@ vWN = normalize(mat3(modelMatrix) * objectNormal);`);
     const hexColor = '#' + new THREE.Color(color).getHexString();
 
     const r = 24;
-    ctx.fillStyle = 'rgba(15, 10, 8, 0.85)';
+    ctx.fillStyle = 'rgba(7, 11, 18, 0.92)';
     ctx.beginPath();
     ctx.moveTo(r, 0); ctx.lineTo(w - r, 0); ctx.quadraticCurveTo(w, 0, w, r);
     ctx.lineTo(w, h - r); ctx.quadraticCurveTo(w, h, w - r, h);
     ctx.lineTo(r, h); ctx.quadraticCurveTo(0, h, 0, h - r);
     ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0);
     ctx.fill();
-    ctx.strokeStyle = hexColor; ctx.lineWidth = 6; ctx.stroke();
+    ctx.strokeStyle = hexColor; ctx.lineWidth = 4; ctx.stroke();
 
+    // Top tag
     ctx.fillStyle = hexColor;
-    ctx.font = 'bold 76px system-ui, sans-serif';
+    ctx.font = '700 34px "JetBrains Mono", monospace';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(name, w / 2, 100);
+    ctx.fillText('SEKTOR GEOLOGI MARS', w / 2, 58);
+
+    // Main Region Name
     ctx.fillStyle = '#ffffff';
-    ctx.font = '46px system-ui, sans-serif';
-    ctx.fillText('📍 Wilayah Eksplorasi', w / 2, 190);
+    ctx.font = '700 74px "Plus Jakarta Sans", "Inter", sans-serif';
+    ctx.fillText(name, w / 2, 128);
+
+    // Subtitle
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+    ctx.font = '600 36px "Plus Jakarta Sans", "Inter", sans-serif';
+    ctx.fillText('ZONA RISET ILMIAH & SURVEY', w / 2, 196);
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.minFilter = THREE.LinearFilter;
@@ -608,11 +665,16 @@ vWN = normalize(mat3(modelMatrix) * objectNormal);`);
    * @param {number} roverProjY — posisi projected Y robot aktif
    */
   update(roverProjX, roverProjY) {
+    if (this._disabled) {
+      if (this.popupEl) this.popupEl.style.display = 'none';
+      return;
+    }
     const t = performance.now() / 1000;
     this.uTime.value = t;
 
+    const activeList = (this.activeMapId === 'usgs-sim-3470') ? this.olympusMarkers : this.markers;
     let closest = null, closestDist = Infinity;
-    for (const m of this.markers) {
+    for (const m of activeList) {
       const dist = Math.hypot(roverProjX - m.projX, roverProjY - m.projY);
       m.beam.material.opacity = 0.28 + 0.08 * Math.sin(t * 1.5 + m.phase);
       if (m.light) m.light.intensity = 3.6 + 0.7 * Math.sin(t * 2.1 + m.phase) + 0.4 * Math.sin(t * 5.3 + m.phase * 2);

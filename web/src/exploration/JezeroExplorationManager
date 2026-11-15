@@ -1,0 +1,501 @@
+/**
+ * src/exploration/JezeroExplorationManager.js
+ * Integrasi 3D Marker, Deteksi Zona Otomatis, dan Sistem Misi ke Scene Three.js Utama
+ */
+
+import * as THREE from '../../three.module.js';
+import { EXPLORATION_ZONES, EXPLORATION_OBJECTS } from './jezeroExplorationData.js';
+
+export class JezeroExplorationManager {
+  /**
+   * @param {Object} params
+   * @param {THREE.Scene} params.scene - Scene Three.js utama dari main.js
+   * @param {Function} params.lonLatToWorld - Fungsi proyeksi project: (lon, lat) => { x, z }
+   * @param {Function} params.getElevationAt - Fungsi elevasi terrain project: (x, z) => y (sudah termasuk verticalExaggeration)
+   * @param {Function} [params.onWaypointSelected] - Callback opsional jika sistem navigasi project memiliki marker waypoint
+   */
+  constructor({ scene, lonLatToWorld, getElevationAt, onWaypointSelected }) {
+    this.scene = scene;
+    this.lonLatToWorld = lonLatToWorld;
+    this.getElevationAt = getElevationAt;
+    this.onWaypointSelected = onWaypointSelected || (() => {});
+
+    this.zones = EXPLORATION_ZONES.map((z) => ({
+      ...z,
+      mission: { ...z.mission }
+    }));
+
+    this.objects = EXPLORATION_OBJECTS.map((o) => ({
+      ...o,
+      inspected: false,
+      worldPos: new THREE.Vector3(),
+      meshGroup: null,
+      ringMesh: null
+    }));
+
+    this.activeZoneId = 'JZ-03';
+    this.currentRoverZone = this.zones[0];
+    this.selectedObject = null;
+    this.nearbyObject = null;
+    this.markersVisible = true;
+    this.zonesVisible = true;
+
+    this.rootGroup = new THREE.Group();
+    this.rootGroup.name = 'JezeroExplorationGroup';
+    this.scene.add(this.rootGroup);
+
+    this.zoneRings = [];
+    this.markerClickTargets = [];
+
+    this._buildZoneBoundaries();
+    this._buildObjectMarkers();
+    this._bindHUD();
+    this.refreshHUD();
+  }
+
+  /**
+   * Membuat lingkaran batas zona tipis tepat mengikuti kontur terrain
+   */
+  _buildZoneBoundaries() {
+    this.zones.forEach((zone) => {
+      const center = this.lonLatToWorld(zone.center.lon, zone.center.lat);
+      if (!center || Number.isNaN(center.x)) return;
+
+      const segments = 64;
+      const points = [];
+      for (let i = 0; i <= segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        const wx = center.x + Math.cos(theta) * zone.radiusMeters;
+        const wz = center.z + Math.sin(theta) * zone.radiusMeters;
+        const wy = this.getElevationAt(wx, wz) + 12; // 12m di atas permukaan agar tidak z-fighting
+        points.push(new THREE.Vector3(wx, wy, wz));
+      }
+
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({
+        color: new THREE.Color(zone.color),
+        transparent: true,
+        opacity: 0.55
+      });
+
+      const line = new THREE.Line(geometry, material);
+      line.userData = { zone, center, radiusMeters: zone.radiusMeters };
+      this.rootGroup.add(line);
+      this.zoneRings.push(line);
+    });
+  }
+
+  /**
+   * Membuat marker 3D + label sprite di atas permukaan terrain untuk setiap POI
+   */
+  _buildObjectMarkers() {
+    const placedPositions = [];
+
+    this.objects.forEach((obj) => {
+      const pos = this.lonLatToWorld(obj.lon, obj.lat);
+      if (!pos || Number.isNaN(pos.x)) return;
+
+      let wx = pos.x;
+      let wz = pos.z;
+
+      // Jaga jarak minimum antar marker (minimal 250 m) agar tidak menumpuk
+      for (const prev of placedPositions) {
+        const dist = Math.hypot(wx - prev.x, wz - prev.z);
+        if (dist < 250) {
+          wx += 220;
+          wz -= 180;
+        }
+      }
+      placedPositions.push({ x: wx, z: wz });
+
+      const wy = this.getElevationAt(wx, wz);
+      obj.worldPos.set(wx, wy, wz);
+
+      const group = new THREE.Group();
+      group.position.copy(obj.worldPos);
+
+      // 1. Cincin dasar menempel permukaan terrain
+      const ringGeo = new THREE.RingGeometry(45, 70, 32);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(obj.color),
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.85
+      });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.position.y = 6;
+      group.add(ringMesh);
+
+      // 2. Suar vertikal (beacon pin)
+      const pinGeo = new THREE.CylinderGeometry(8, 22, 180, 12);
+      const pinMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(obj.color),
+        emissive: new THREE.Color(obj.color),
+        emissiveIntensity: 0.65,
+        roughness: 0.3
+      });
+      const pinMesh = new THREE.Mesh(pinGeo, pinMat);
+      pinMesh.position.y = 90;
+      pinMesh.userData = { explorationObject: obj };
+      group.add(pinMesh);
+      this.markerClickTargets.push(pinMesh);
+
+      // 3. Label Sprite 3D yang jelas di atas pin
+      const labelSprite = this._createLabelSprite(obj);
+      labelSprite.position.y = 235;
+      labelSprite.userData = { explorationObject: obj };
+      group.add(labelSprite);
+      this.markerClickTargets.push(labelSprite);
+
+      obj.meshGroup = group;
+      obj.ringMesh = ringMesh;
+      this.rootGroup.add(group);
+    });
+  }
+
+  _createLabelSprite(obj) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    // Latar kapsul semi-transparan
+    ctx.fillStyle = 'rgba(10, 15, 25, 0.86)';
+    ctx.strokeStyle = obj.inspected ? '#22c55e' : obj.color;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.roundRect(12, 18, 488, 92, 18);
+    ctx.fill();
+    ctx.stroke();
+
+    // Status tag & Nama POI
+    ctx.fillStyle = obj.inspected ? '#4ade80' : '#f8fafc';
+    ctx.font = 'bold 26px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    const prefix = obj.inspected ? '✓ ' : obj.isMissionTarget ? '★ ' : '• ';
+    ctx.fillText(`${prefix}${obj.name}`, 256, 62);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '20px system-ui, sans-serif';
+    ctx.fillText(`${obj.zoneId} • ${obj.materialType}`, 256, 94);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(620, 155, 1);
+    return sprite;
+  }
+
+  /**
+   * Dipanggil ulang ketika slider Vertical Exaggeration atau Mesh Resolution berubah
+   */
+  syncHeightsToTerrain() {
+    this.objects.forEach((obj) => {
+      if (!obj.meshGroup) return;
+      const newY = this.getElevationAt(obj.worldPos.x, obj.worldPos.z);
+      obj.worldPos.y = newY;
+      obj.meshGroup.position.y = newY;
+    });
+
+    this.zoneRings.forEach((line) => {
+      const { center, radiusMeters } = line.userData;
+      const posAttr = line.geometry.attributes.position;
+      const segments = posAttr.count - 1;
+      for (let i = 0; i <= segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        const wx = center.x + Math.cos(theta) * radiusMeters;
+        const wz = center.z + Math.sin(theta) * radiusMeters;
+        const wy = this.getElevationAt(wx, wz) + 12;
+        posAttr.setXYZ(i, wx, wy, wz);
+      }
+      posAttr.needsUpdate = true;
+    });
+  }
+
+  /**
+   * Dipanggil setiap frame di animation loop main.js
+   */
+  update(roverWorldPos, elapsedTime = 0) {
+    // Animasi denyut lembut pada cincin target
+    this.objects.forEach((obj, idx) => {
+      if (obj.ringMesh) {
+        const pulse = 1 + Math.sin(elapsedTime * 3 + idx) * 0.12;
+        obj.ringMesh.scale.set(pulse, pulse, 1);
+      }
+    });
+
+    if (!roverWorldPos) return;
+
+    // 1. Deteksi zona rover saat ini (berdasarkan jarak ke pusat zona)
+    let closestZone = this.zones[0];
+    let minZoneDist = Infinity;
+    this.zones.forEach((z) => {
+      const c = this.lonLatToWorld(z.center.lon, z.center.lat);
+      if (!c) return;
+      const d = Math.hypot(roverWorldPos.x - c.x, roverWorldPos.z - c.z);
+      if (d < minZoneDist) {
+        minZoneDist = d;
+        closestZone = z;
+      }
+    });
+
+    if (closestZone && this.currentRoverZone?.id !== closestZone.id) {
+      this.currentRoverZone = closestZone;
+      if (closestZone.mission.status === 'NOT_STARTED') {
+        closestZone.mission.status = 'IN_PROGRESS';
+      }
+      this.refreshHUD();
+    }
+
+    // 2. Deteksi POI terdekat dalam radius inspeksi (400 meter)
+    let nearestObj = null;
+    let minObjDist = Infinity;
+    this.objects.forEach((obj) => {
+      const d = Math.hypot(roverWorldPos.x - obj.worldPos.x, roverWorldPos.z - obj.worldPos.z);
+      if (d < minObjDist) {
+        minObjDist = d;
+        nearestObj = obj;
+      }
+    });
+
+    const prevNearbyId = this.nearbyObject?.id || null;
+    this.nearbyObject = minObjDist <= 400 ? nearestObj : null;
+
+    if ((this.nearbyObject?.id || null) !== prevNearbyId) {
+      this.refreshHUD();
+    }
+
+    // Perbarui jarak real-time ke target yang dipilih
+    const distEl = document.getElementById('jz-target-dist');
+    const activeTarget = this.selectedObject || this.nearbyObject;
+    if (distEl && activeTarget) {
+      const d = Math.hypot(
+        roverWorldPos.x - activeTarget.worldPos.x,
+        roverWorldPos.z - activeTarget.worldPos.z
+      );
+      distEl.textContent = d >= 1000 ? `${(d / 1000).toFixed(2)} km` : `${Math.round(d)} m`;
+    }
+  }
+
+  /**
+   * Dipanggil dari handler klik raycaster di main.js
+   * @returns {boolean} true jika klik mengenai marker eksplorasi
+   */
+  handleRaycasterClick(raycaster) {
+    if (!this.markersVisible) return false;
+    const hits = raycaster.intersectObjects(this.markerClickTargets, false);
+    if (hits.length > 0) {
+      const obj = hits[0].object.userData.explorationObject;
+      if (obj) {
+        this.selectObject(obj.id);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  selectObject(objectId) {
+    const obj = this.objects.find((o) => o.id === objectId);
+    if (!obj) return;
+    this.selectedObject = obj;
+    this.activeZoneId = obj.zoneId;
+
+    this.onWaypointSelected({
+      name: obj.name,
+      lon: obj.lon,
+      lat: obj.lat,
+      worldPos: obj.worldPos
+    });
+
+    this.refreshHUD();
+  }
+
+  inspectObject(objectId) {
+    const obj = this.objects.find((o) => o.id === objectId);
+    if (!obj || obj.inspected) return;
+
+    obj.inspected = true;
+
+    // Ubah warna marker menjadi hijau selesai
+    if (obj.ringMesh) {
+      obj.ringMesh.material.color.set('#22c55e');
+    }
+    if (obj.meshGroup) {
+      const pin = obj.meshGroup.children[1];
+      if (pin?.material) {
+        pin.material.color.set('#22c55e');
+        pin.material.emissive.set('#22c55e');
+      }
+      // Perbarui teks label menjadi centang hijau
+      const oldSprite = obj.meshGroup.children[2];
+      if (oldSprite) {
+        obj.meshGroup.remove(oldSprite);
+        const newSprite = this._createLabelSprite(obj);
+        newSprite.position.y = 235;
+        newSprite.userData = { explorationObject: obj };
+        obj.meshGroup.add(newSprite);
+        this.markerClickTargets.push(newSprite);
+      }
+    }
+
+    // Evaluasi progres misi pada zona terkait
+    const zone = this.zones.find((z) => z.id === obj.zoneId);
+    if (zone) {
+      const zoneTargets = this.objects.filter((o) => o.zoneId === zone.id && o.isMissionTarget);
+      const allDone = zoneTargets.every((t) => t.inspected);
+      zone.mission.status = allDone ? 'COMPLETED' : 'IN_PROGRESS';
+
+      if (allDone && zone.mission.nextZoneId) {
+        const nextZ = this.zones.find((z) => z.id === zone.mission.nextZoneId);
+        if (nextZ && nextZ.mission.status === 'NOT_STARTED') {
+          nextZ.mission.status = 'IN_PROGRESS';
+        }
+      }
+    }
+
+    this.refreshHUD();
+  }
+
+  _bindHUD() {
+    const zoneSelect = document.getElementById('jz-zone-select');
+    if (zoneSelect) {
+      zoneSelect.innerHTML = this.zones
+        .map(
+          (z) =>
+            `<option value="${z.id}">${z.sequenceOrder}. ${z.id} — ${z.name}</option>`
+        )
+        .join('');
+
+      zoneSelect.addEventListener('change', (e) => {
+        this.activeZoneId = e.target.value;
+        const firstTarget =
+          this.objects.find((o) => o.zoneId === this.activeZoneId && o.isMissionTarget) ||
+          this.objects.find((o) => o.zoneId === this.activeZoneId);
+        if (firstTarget) this.selectObject(firstTarget.id);
+        else this.refreshHUD();
+      });
+    }
+
+    const toggleMarkers = document.getElementById('jz-toggle-markers');
+    if (toggleMarkers) {
+      toggleMarkers.addEventListener('change', (e) => {
+        this.markersVisible = e.target.checked;
+        this.rootGroup.visible = this.markersVisible;
+      });
+    }
+
+    // Shortcut keyboard 'E' untuk memeriksa objek terdekat
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'e') {
+        const target = this.nearbyObject || this.selectedObject;
+        if (target) this.inspectObject(target.id);
+      }
+    });
+  }
+
+  refreshHUD() {
+    const panel = document.getElementById('jz-mission-body');
+    if (!panel) return;
+
+    const zone =
+      this.zones.find((z) => z.id === this.activeZoneId) || this.currentRoverZone || this.zones[0];
+    const zoneSelect = document.getElementById('jz-zone-select');
+    if (zoneSelect && zoneSelect.value !== zone.id) {
+      zoneSelect.value = zone.id;
+    }
+
+    const zoneObjs = this.objects.filter((o) => o.zoneId === zone.id);
+    const inspectedCount = this.objects.filter((o) => o.inspected).length;
+    const activeObj = this.nearbyObject || this.selectedObject || zoneObjs[0];
+
+    const statusBadge =
+      zone.mission.status === 'COMPLETED'
+        ? '<span style="color:#4ade80;font-weight:700;">SELESAI</span>'
+        : zone.mission.status === 'IN_PROGRESS'
+        ? '<span style="color:#fbbf24;font-weight:700;">BERLANGSUNG</span>'
+        : '<span style="color:#94a3b8;">BELUM DIMULAI</span>';
+
+    panel.innerHTML = `
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">
+        Zona Rover: <strong style="color:#e2e8f0;">${this.currentRoverZone?.id || '-'}</strong> • 
+        POI Diperiksa: <strong style="color:#38bdf8;">${inspectedCount}/${this.objects.length}</strong>
+      </div>
+
+      <div style="background:rgba(15,23,42,0.75);border:1px solid #334155;border-radius:6px;padding:8px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+          <span style="color:${zone.color};font-weight:700;">${zone.mission.id} (${zone.mission.activityLabel})</span>
+          ${statusBadge}
+        </div>
+        <div style="font-weight:700;color:#f8fafc;font-size:12px;margin-bottom:4px;">${zone.mission.title}</div>
+        <div style="font-size:11px;color:#cbd5e1;line-height:1.35;margin-bottom:5px;">
+          <strong>Instruksi:</strong> ${zone.mission.instruction}
+        </div>
+        <div style="font-size:10.5px;color:#7dd3fc;line-height:1.35;">
+          <strong>Fakta Ilmiah:</strong> ${
+            zone.mission.status === 'COMPLETED' ? zone.mission.scientificReward : zone.scientificFact
+          }
+        </div>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:4px;">TITIK OBJEK ZONA ${zone.id}:</div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+        ${zoneObjs
+          .map(
+            (o) => `
+          <button data-poi-id="${o.id}" class="jz-poi-btn" style="text-align:left;padding:5px 7px;border-radius:5px;border:1px solid ${
+              activeObj?.id === o.id ? '#38bdf8' : '#334155'
+            };background:${
+              activeObj?.id === o.id ? 'rgba(56,189,248,0.16)' : 'rgba(15,23,42,0.6)'
+            };color:#e2e8f0;font-size:11px;cursor:pointer;display:flex;justify-content:space-between;">
+            <span>${o.inspected ? '✓' : o.isMissionTarget ? '★' : '•'} ${o.name}</span>
+            <span style="color:${o.inspected ? '#4ade80' : '#94a3b8'};font-size:10px;">${
+              o.inspected ? 'Selesai' : 'Target'
+            }</span>
+          </button>`
+          )
+          .join('')}
+      </div>
+
+      ${
+        activeObj
+          ? `<div style="border-top:1px solid #334155;padding-top:7px;font-size:11px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong style="color:#fff;">${activeObj.name}</strong>
+                <span id="jz-target-dist" style="color:#fbbf24;font-weight:700;">-- m</span>
+              </div>
+              <div style="color:#94a3b8;font-size:10px;margin:2px 0 4px;">${activeObj.materialType} • ${activeObj.evidenceStatus}</div>
+              <div style="color:#cbd5e1;line-height:1.35;margin-bottom:4px;">${activeObj.shortDesc}</div>
+              <div style="color:#a5f3fc;font-size:10.5px;line-height:1.3;margin-bottom:6px;">
+                <strong>Tujuan Pemeriksaan:</strong> ${activeObj.researchGoal}
+              </div>
+              <button id="jz-inspect-btn" ${activeObj.inspected ? 'disabled' : ''} style="width:100%;padding:6px;border-radius:5px;border:1px solid ${
+              activeObj.inspected ? '#22c55e' : '#f43f5e'
+            };background:${
+              activeObj.inspected ? 'rgba(34,197,94,0.2)' : 'rgba(244,63,94,0.25)'
+            };color:#fff;font-weight:700;cursor:pointer;">
+                ${
+                  activeObj.inspected
+                    ? '✓ Data Ilmiah Tercatat di Log'
+                    : 'Periksa & Analisis Objek [Tombol E]'
+                }
+              </button>
+            </div>`
+          : ''
+      }
+    `;
+
+    panel.querySelectorAll('.jz-poi-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.selectObject(btn.getAttribute('data-poi-id'));
+      });
+    });
+
+    const inspectBtn = document.getElementById('jz-inspect-btn');
+    if (inspectBtn && activeObj && !activeObj.inspected) {
+      inspectBtn.addEventListener('click', () => {
+        this.inspectObject(activeObj.id);
+      });
+    }
+  }
+}

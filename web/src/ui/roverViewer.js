@@ -128,6 +128,10 @@ export class RoverViewer {
       this.controls.update();
     }
 
+    if (this.currentModel?.userData?.animationController) {
+      this.currentModel.userData.animationController.update(0.016, { forwardVelocity: 0, angularVelocity: 0 });
+    }
+
     if (this.renderer && this.scene && this.camera) {
       this.renderer.render(this.scene, this.camera);
     }

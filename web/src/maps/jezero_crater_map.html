@@ -1,0 +1,2275 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jezero Crater & Nili Planum — USGS SIM 3464 / Mars 2020 Geological Exploration Map</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            obsidian: '#090c12',
+            slatepanel: '#111622',
+            slateborder: '#1e2738',
+            nasaBlue: '#3b82f6',
+            marsRust: '#d96b43',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #090c12;
+      color: #e2e8f0;
+      user-select: none;
+    }
+    /* Custom scrollbar for sidebars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0d121c; }
+    ::-webkit-scrollbar-thumb { background: #263248; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3b4d6e; }
+
+    /* Custom range slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      background: #1e2738;
+      height: 5px;
+      border-radius: 999px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      border: 2px solid #0f172a;
+    }
+
+    .map-cursor-grab { cursor: grab; }
+    .map-cursor-grabbing { cursor: grabbing; }
+    .map-cursor-pointer { cursor: pointer; }
+
+    /* Subtle pulse for active target */
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.9; }
+      70% { transform: scale(1.6); opacity: 0; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .pulse-ring {
+      animation: pulseRing 2.2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen w-screen bg-obsidian text-slate-200 font-sans">
+
+  <!-- TOP NASA / USGS MISSION HEADER -->
+  <header class="h-14 bg-slatepanel border-b border-slateborder px-3 md:px-5 flex items-center justify-between z-30 shrink-0 shadow-lg">
+    <div class="flex items-center gap-3 min-w-0">
+      <!-- Mission Emblem SVG -->
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-sky-500/20 to-amber-500/20 border border-sky-400/30 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 3a14.5 14.5 0 0 0 0 18 14.5 14.5 0 0 0 0-18" />
+          <path d="M3 12h18" />
+          <circle cx="15.5" cy="9.5" r="1.5" fill="#f59e0b" stroke="none" />
+        </svg>
+      </div>
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm md:text-base font-semibold tracking-tight text-white truncate">
+            JEZERO CRATER &amp; NILI PLANUM
+          </h1>
+          <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30">
+            USGS SIM 3464
+          </span>
+          <span class="hidden lg:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            MARS 2020 / PERSEVERANCE
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 truncate hidden sm:block">
+          Planetary Geologic &amp; Fluvio-Lacustrine Exploration Map • Sun &amp; Stack (2020) / NASA Mars Trek / CRISM
+        </p>
+      </div>
+    </div>
+
+    <!-- Search & Quick Filter Bar -->
+    <div class="flex items-center gap-2 md:gap-3">
+      <div class="relative w-44 sm:w-64 md:w-72">
+        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="Search units, zones, outcrops..."
+          class="w-full bg-obsidian/90 border border-slateborder focus:border-sky-500 rounded-lg pl-8 pr-7 py-1.5 text-xs text-slate-200 placeholder-slate-500 outline-none transition"
+        />
+        <button id="clearSearchBtn" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">✕</button>
+        <!-- Dropdown results -->
+        <div id="searchResults" class="hidden absolute left-0 right-0 mt-1.5 bg-slatepanel border border-slateborder rounded-xl shadow-2xl max-h-80 overflow-y-auto z-50 divide-y divide-slateborder/60"></div>
+      </div>
+
+      <!-- Mobile Drawer Toggles -->
+      <button id="toggleLayersBtn" class="lg:hidden px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slateborder text-xs font-medium text-slate-200 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <span class="hidden sm:inline">Layers</span>
+      </button>
+      <button id="toggleInfoBtn" class="px-2.5 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/40 text-xs font-medium text-sky-300 flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <span class="hidden sm:inline">Inspector</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex relative overflow-hidden">
+
+    <!-- LEFT SIDEBAR: LAYER CONTROLS & USGS LEGEND -->
+    <aside id="leftSidebar" class="w-72 md:w-80 bg-slatepanel/95 backdrop-blur-md border-r border-slateborder flex flex-col z-20 shrink-0 transition-transform duration-200 absolute lg:relative inset-y-0 left-0 -translate-x-full lg:translate-x-0">
+      <div class="p-3.5 border-b border-slateborder flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Cartographic Layers</span>
+        </div>
+        <button id="closeLeftSidebar" class="lg:hidden text-slate-400 hover:text-white p-1">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3.5 space-y-4">
+        <!-- Map Layers Toggles -->
+        <div class="space-y-2">
+          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">Base &amp; Thematic Overlays</div>
+
+          <label class="flex items-center justify-between p-2 rounded-lg bg-obsidian/60 border border-slateborder/80 hover:border-slate-600 cursor-pointer transition">
+            <div class="flex items-center gap-2.5">
+              <input type="checkbox" id="layerTerrain" checked class="accent-sky-500 w-3.5 h-3.5 rounded" />
+              <div>
+                <div class="text-xs font-medium text-slate-200">Shaded Relief &amp; Contours</div>
+                <div class="text-[10px] text-slate-400">MOLA/CTX DEM hillshade &amp; 100m contours</div>
+              </div>
+            </div>
+            <span class="w-3 h-3 rounded-sm bg-gradient-to-tr from-stone-700 to-stone-400 border border-stone-500"></span>
+          </label>
+
+          <div class="p-2 rounded-lg bg-obsidian/60 border border-slateborder/80 space-y-2">
+            <label class="flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-2.5">
+                <input type="checkbox" id="layerGeology" checked class="accent-sky-500 w-3.5 h-3.5 rounded" />
+                <div>
+                  <div class="text-xs font-medium text-slate-200">USGS SIM 3464 Units</div>
+                  <div class="text-[10px] text-slate-400">Sun &amp; Stack (2020) geologic polygons</div>
+                </div>
+              </div>
+              <span class="text-[10px] font-mono text-sky-400" id="geoOpacityVal">68%</span>
+            </label>
+            <div class="flex items-center gap-2 pl-6">
+              <span class="text-[10px] text-slate-400">Opacity</span>
+              <input type="range" id="geoOpacitySlider" min="15" max="95" value="68" class="flex-1" />
+            </div>
+          </div>
+
+          <label class="flex items-center justify-between p-2 rounded-lg bg-obsidian/60 border border-slateborder/80 hover:border-slate-600 cursor-pointer transition">
+            <div class="flex items-center gap-2.5">
+              <input type="checkbox" id="layerHydrology" checked class="accent-sky-500 w-3.5 h-3.5 rounded" />
+              <div>
+                <div class="text-xs font-medium text-slate-200">Fluvial Valleys &amp; Paleolake</div>
+                <div class="text-[10px] text-slate-400">Inlet/outlet valles &amp; -2,395 m shoreline</div>
+              </div>
+            </div>
+            <span class="w-3 h-3 rounded-full bg-cyan-400/80 border border-cyan-200"></span>
+          </label>
+
+          <label class="flex items-center justify-between p-2 rounded-lg bg-obsidian/60 border border-slateborder/80 hover:border-slate-600 cursor-pointer transition">
+            <div class="flex items-center gap-2.5">
+              <input type="checkbox" id="layerZones" checked class="accent-sky-500 w-3.5 h-3.5 rounded" />
+              <div>
+                <div class="text-xs font-medium text-slate-200">Exploration Zones (JZ-01–06)</div>
+                <div class="text-[10px] text-slate-400">Clickable geological province polygons</div>
+              </div>
+            </div>
+            <span class="w-3 h-3 rounded-sm border-2 border-amber-400 bg-amber-400/20"></span>
+          </label>
+
+          <label class="flex items-center justify-between p-2 rounded-lg bg-obsidian/60 border border-slateborder/80 hover:border-slate-600 cursor-pointer transition">
+            <div class="flex items-center gap-2.5">
+              <input type="checkbox" id="layerMinerals" checked class="accent-sky-500 w-3.5 h-3.5 rounded" />
+              <div>
+                <div class="text-xs font-medium text-slate-200">CRISM Mineral Detections</div>
+                <div class="text-[10px] text-slate-400">Mg-carbonates, olivine, smectites</div>
+              </div>
+            </div>
+            <span class="w-3 h-3 rotate-45 bg-emerald-400 border border-emerald-200"></span>
+          </label>
+
+          <label class="flex items-center justify-between p-2 rounded-lg bg-obsidian/60 border border-slateborder/80 hover:border-slate-600 cursor-pointer transition">
+            <div class="flex items-center gap-2.5">
+              <input type="checkbox" id="layerPOIs" checked class="accent-sky-500 w-3.5 h-3.5 rounded" />
+              <div>
+                <div class="text-xs font-medium text-slate-200">Mission Targets &amp; Outcrops</div>
+                <div class="text-[10px] text-slate-400">Perseverance traverse, cores &amp; outcrops</div>
+              </div>
+            </div>
+            <span class="w-3 h-3 rounded-full bg-rose-500 border border-white"></span>
+          </label>
+        </div>
+
+        <!-- USGS SIM 3464 Stratigraphic Legend -->
+        <div class="pt-2 border-t border-slateborder">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-mono uppercase tracking-wider text-slate-400">USGS SIM 3464 Geologic Units</span>
+            <span class="text-[10px] text-slate-500">Click unit for info</span>
+          </div>
+          <div id="unitLegendList" class="space-y-1.5">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+
+        <!-- Symbology & Evidence Key -->
+        <div class="pt-2 border-t border-slateborder">
+          <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-2">Feature Symbology Key</div>
+          <div class="grid grid-cols-1 gap-1.5 text-[11px] text-slate-300 bg-obsidian/60 p-2.5 rounded-lg border border-slateborder/70">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 text-[9px] font-bold">★</span>
+              <span>Landing Site / Sample Depot</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-500/20 border border-rose-400 text-rose-300 text-[9px]">●</span>
+              <span>Rover Traverse / Key Outcrop</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-4 h-4 bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-[9px] rotate-45 scale-75"></span>
+              <span>Orbital CRISM Mineral Indicator</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-dashed border-sky-400 text-sky-300 text-[9px]">◎</span>
+              <span>Strategic / Planned Campaign Target</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-0.5 bg-amber-400 inline-block"></span>
+              <span>Perseverance Traverse Path (Sol 0–1200+)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER INTERACTIVE GEOLOGICAL MAP VIEWPORT -->
+    <main class="flex-1 relative bg-obsidian overflow-hidden" id="mapViewport">
+      <!-- HTML5 Canvas for High-Detail Hillshade Terrain + Contours + Grid -->
+      <canvas id="terrainCanvas" class="absolute inset-0 w-full h-full block"></canvas>
+
+      <!-- Interactive SVG Overlay for Geological Polygons, Hydrology, Zones & POIs -->
+      <svg id="mapSvg" class="absolute inset-0 w-full h-full block map-cursor-grab" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Crosshatch pattern for Marginal Carbonate / Shoreline -->
+          <pattern id="carbonatePattern" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="8" stroke="#2dd4bf" stroke-width="1.5" stroke-opacity="0.45" />
+          </pattern>
+          <!-- Megabreccia stipple pattern -->
+          <pattern id="brecciaPattern" width="12" height="12" patternUnits="userSpaceOnUse">
+            <polygon points="3,2 6,4 4,7 1,5" fill="#94a3b8" fill-opacity="0.25" />
+            <polygon points="9,7 11,9 8,11 7,8" fill="#94a3b8" fill-opacity="0.25" />
+          </pattern>
+          <!-- Paleolake water shimmer gradient -->
+          <radialGradient id="paleolakeGrad" cx="52%" cy="50%" r="48%">
+            <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.16" />
+            <stop offset="80%" stop-color="#0284c7" stop-opacity="0.22" />
+            <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.34" />
+          </radialGradient>
+          <!-- Glow filter for selected features -->
+          <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        <!-- Master Transform Group controlled by Pan & Zoom -->
+        <g id="mapWorldGroup">
+          <!-- 1. USGS SIM 3464 Geologic Unit Polygons -->
+          <g id="geologyLayerGroup"></g>
+
+          <!-- 2. Fluvial Valleys & Paleolake Hydrology -->
+          <g id="hydrologyLayerGroup"></g>
+
+          <!-- 3. Exploration Zones (JZ-01 to JZ-06) -->
+          <g id="zonesLayerGroup"></g>
+
+          <!-- 4. Perseverance Traverse & Ingenuity Flight Corridor -->
+          <g id="traverseLayerGroup"></g>
+
+          <!-- 5. Orbital CRISM Mineral Detections -->
+          <g id="mineralsLayerGroup"></g>
+
+          <!-- 6. POIs, Outcrops & Mission Targets -->
+          <g id="poisLayerGroup"></g>
+
+          <!-- 7. Geographic & Topographic Labels -->
+          <g id="labelsLayerGroup" pointer-events="none"></g>
+        </g>
+      </svg>
+
+      <!-- Floating Top-Left Quick Zone Jump Pills -->
+      <div class="absolute top-3 left-3 right-16 flex items-center gap-1.5 overflow-x-auto pb-1 pointer-events-auto no-scrollbar z-10">
+        <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400 bg-slatepanel/90 border border-slateborder px-2 py-1 rounded-md shrink-0">
+          Zones:
+        </span>
+        <div id="quickZoneBar" class="flex items-center gap-1.5">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Floating Top-Right Navigation Controls (+ / - / Reset / Overview) -->
+      <div class="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
+        <button id="zoomInBtn" title="Zoom In" class="w-9 h-9 rounded-lg bg-slatepanel/95 hover:bg-slate-800 border border-slateborder text-slate-200 flex items-center justify-center shadow-lg transition font-mono text-base font-bold">
+          +
+        </button>
+        <button id="zoomOutBtn" title="Zoom Out" class="w-9 h-9 rounded-lg bg-slatepanel/95 hover:bg-slate-800 border border-slateborder text-slate-200 flex items-center justify-center shadow-lg transition font-mono text-base font-bold">
+          −
+        </button>
+        <button id="resetViewBtn" title="Reset Full Jezero & Nili Planum View" class="w-9 h-9 rounded-lg bg-slatepanel/95 hover:bg-slate-800 border border-slateborder text-sky-400 flex items-center justify-center shadow-lg transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+        <button id="zoomDeltaBtn" title="Focus on Western Delta & Traverse" class="w-9 h-9 rounded-lg bg-slatepanel/95 hover:bg-slate-800 border border-slateborder text-amber-400 flex items-center justify-center shadow-lg transition text-[10px] font-mono font-bold">
+          Δ
+        </button>
+      </div>
+
+      <!-- Hover Tooltip -->
+      <div id="mapTooltip" class="hidden fixed pointer-events-none z-40 bg-slatepanel/95 border border-slate-600/80 rounded-lg px-2.5 py-1.5 shadow-xl backdrop-blur-sm max-w-xs">
+        <div id="tooltipTitle" class="text-xs font-semibold text-white"></div>
+        <div id="tooltipSub" class="text-[10px] font-mono text-sky-300 mt-0.5"></div>
+      </div>
+
+      <!-- Bottom HUD: Martian Coordinates, Elevation & Dynamic Scale Bar -->
+      <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-end justify-between gap-2 pointer-events-none z-10">
+        <!-- Coordinate & Elevation Telemetry Box -->
+        <div class="bg-slatepanel/90 backdrop-blur-md border border-slateborder rounded-xl px-3 py-2 shadow-xl pointer-events-auto flex items-center gap-4 text-[11px] font-mono">
+          <div>
+            <span class="text-slate-400 block text-[9px] uppercase">Areocentric Lat / Lon</span>
+            <span id="coordReadout" class="text-sky-300 font-medium">18.380°N, 77.580°E</span>
+          </div>
+          <div class="h-6 w-px bg-slateborder"></div>
+          <div>
+            <span class="text-slate-400 block text-[9px] uppercase">MOLA Elev. (Est.)</span>
+            <span id="elevReadout" class="text-amber-300 font-medium">-2,540 m</span>
+          </div>
+          <div class="hidden sm:block h-6 w-px bg-slateborder"></div>
+          <div class="hidden sm:block">
+            <span class="text-slate-400 block text-[9px] uppercase">Map Unit</span>
+            <span id="hoverUnitReadout" class="text-emerald-300 font-medium">HNf (Crater Floor)</span>
+          </div>
+        </div>
+
+        <!-- Scale Bar & North Arrow -->
+        <div class="bg-slatepanel/90 backdrop-blur-md border border-slateborder rounded-xl px-3 py-2 shadow-xl pointer-events-auto flex items-center gap-3">
+          <div class="flex flex-col items-center">
+            <div class="flex items-center justify-between w-full text-[10px] font-mono text-slate-300 mb-1">
+              <span>0</span>
+              <span id="scaleBarLabel">10 km</span>
+            </div>
+            <div id="scaleBarLine" class="h-1.5 w-24 bg-slate-700 border-x border-b border-sky-400 relative">
+              <div class="h-full w-1/2 bg-sky-400"></div>
+            </div>
+          </div>
+          <div class="h-6 w-px bg-slateborder"></div>
+          <div class="flex flex-col items-center justify-center text-slate-300" title="Planetocentric North">
+            <svg class="w-4 h-4 text-sky-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L6 19l6-4 6 4-6-17z"/>
+            </svg>
+            <span class="text-[9px] font-mono font-bold leading-none mt-0.5">N</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT SIDEBAR: GEOLOGICAL INSPECTOR DRAWER -->
+    <aside id="rightSidebar" class="w-80 sm:w-96 bg-slatepanel/95 backdrop-blur-md border-l border-slateborder flex flex-col z-20 shrink-0 transition-transform duration-200 absolute md:relative inset-y-0 right-0 translate-x-full md:translate-x-0">
+      <div class="p-3.5 border-b border-slateborder flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Geological Inspector</span>
+        </div>
+        <button id="closeRightSidebar" class="md:hidden text-slate-400 hover:text-white p-1">✕</button>
+      </div>
+
+      <!-- Inspector Content Container -->
+      <div id="inspectorContent" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <!-- Populated dynamically when a Zone, POI, or Geologic Unit is selected -->
+      </div>
+    </aside>
+
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * JEZERO CRATER & NILI PLANUM GEOLOGICAL EXPLORATION MAP
+     * Data Synthesis: USGS SIM 3464 (Sun & Stack, 2020), NASA Mars Trek,
+     * MRO CRISM Spectral Mapping (Horgan et al., 2020; Tarnas et al., 2019),
+     * and Mars 2020 Perseverance Mission Science Results (Farley et al., 2022).
+     * ============================================================================
+     */
+
+    // ----------------------------------------------------------------------------
+    // 1. GEOGRAPHIC PROJECTION & SPATIAL REFERENCE
+    // ----------------------------------------------------------------------------
+    // Map world coordinate space: 1200 x 900 logical units
+    // Center of Jezero Crater: ~18.38°N, 77.58°E (diameter ~45 km)
+    // Scale: ~16.5 pixels = 1 km at 1x zoom (so 45 km crater diameter = ~742 px? Wait:
+    // Let's cover ~85 km x 64 km so both Jezero Crater (45 km) AND surrounding Nili Planum,
+    // Neretva Vallis, Sava Vallis, and Pliva Vallis are clearly visible in full frame!)
+    // At 1200 px width = 85 km => ~14.12 px/km => 45 km Jezero Crater diameter = ~635 px!
+    const WORLD_W = 1200;
+    const WORLD_H = 900;
+    const PX_PER_KM = 14.1; // 45 km crater = ~635 px diameter
+
+    // Reference anchor: Jezero Crater center is at world (650, 455) -> (18.38°N, 77.58°E)
+    // Mars radius = 3389.5 km -> 1 deg lat = 59.16 km; at 18.38°N, 1 deg lon = 56.14 km
+    const REF_X = 650;
+    const REF_Y = 455;
+    const REF_LAT = 18.38;
+    const REF_LON = 77.58;
+    const KM_PER_DEG_LAT = 59.16;
+    const KM_PER_DEG_LON = 56.14;
+
+    function worldToLatLon(wx, wy) {
+      const dxKm = (wx - REF_X) / PX_PER_KM;
+      const dyKm = (REF_Y - wy) / PX_PER_KM; // North is up (-Y)
+      const lat = REF_LAT + (dyKm / KM_PER_DEG_LAT);
+      const lon = REF_LON + (dxKm / KM_PER_DEG_LON);
+      return { lat, lon };
+    }
+
+    function latLonToWorld(lat, lon) {
+      const dxKm = (lon - REF_LON) * KM_PER_DEG_LON;
+      const dyKm = (lat - REF_LAT) * KM_PER_DEG_LAT;
+      return {
+        x: REF_X + dxKm * PX_PER_KM,
+        y: REF_Y - dyKm * PX_PER_KM
+      };
+    }
+
+    // ----------------------------------------------------------------------------
+    // 2. USGS SIM 3464 GEOLOGIC UNITS (SUN & STACK, 2020)
+    // ----------------------------------------------------------------------------
+    const GEOLOGIC_UNITS = [
+      {
+        code: 'HNlfd',
+        name: 'Lacustrine & Fan-Delta Deposits',
+        epoch: 'Late Noachian – Early Hesperian',
+        color: '#eab308', // Warm yellow-ochre (USGS deltaic standard)
+        stroke: '#fef08a',
+        opacity: 0.78,
+        minerals: 'Fe/Mg-smectites, Mg-carbonates, hydrated silica, low-Ca pyroxene, sulfates',
+        lithology: 'Finely laminated mudstones, cross-bedded sandstones, pebbly sandstones, and boulder conglomerates forming prograding foreset/bottomset/topset deltaic sequences.',
+        significance: 'Primary astrobiological target of Mars 2020. Fine-grained lacustrine mudstones (e.g., Wildcat Ridge) preserve organic molecules and high potential for ancient biosignatures.',
+        reference: 'USGS SIM 3464 (Sun & Stack, 2020); Mangold et al. (2021)',
+        polygons: [
+          // Western Delta (Neretva Vallis fan-delta complex)
+          'M 412,392 C 425,380 448,376 472,385 C 495,394 514,412 518,432 C 520,446 510,462 496,472 C 482,482 462,486 444,480 C 428,474 416,458 410,442 C 405,428 402,405 412,392 Z',
+          // Kodiak Butte & Deltaic Remnant Mounds
+          'M 498,482 L 512,478 L 516,492 L 501,495 Z',
+          'M 522,455 L 533,451 L 536,462 L 524,465 Z',
+          // Northern Fan / Delta Remnant (Sava Vallis mouth)
+          'M 565,198 C 585,192 612,198 628,215 C 642,230 644,254 632,268 C 618,282 592,282 574,270 C 556,258 548,236 552,218 C 555,208 558,202 565,198 Z'
+        ]
+      },
+      {
+        code: 'HNm',
+        name: 'Marginal Carbonate-Bearing Unit',
+        epoch: 'Late Noachian – Early Hesperian',
+        color: '#14b8a6', // Teal / Turquoise
+        stroke: '#5eead4',
+        opacity: 0.72,
+        pattern: 'url(#carbonatePattern)',
+        minerals: 'Mg-rich carbonates (magnesite/hydromagnesite), olivine, Fe/Mg-phyllosilicates',
+        lithology: 'Light-toned, fractured, terraced carbonate-bearing bedrock and carbonate-cemented sandstones/breccias hugging the inner western and northern crater rim below ~ -2,395 m.',
+        significance: 'Exhibits the strongest orbital CRISM Mg-carbonate spectral signatures on Mars. Represents authigenic lacustrine shoreline precipitates and/or altered olivine-rich shorezone deposits.',
+        reference: 'USGS SIM 3464; Horgan et al. (2020); Tarnas et al. (2019)',
+        polygons: [
+          // Inner Western & Northwestern Rim Marginal Carbonate Belt
+          'M 426,335 C 448,285 492,242 545,212 L 560,235 C 515,260 478,298 456,346 C 446,368 438,382 426,390 L 408,386 C 414,368 418,352 426,335 Z',
+          // Southwestern inner rim carbonate bench (south of Western Delta)
+          'M 406,456 L 426,462 C 435,505 462,555 505,595 L 486,612 C 440,568 412,512 406,456 Z',
+          // Northern inner rim carbonate exposure east of Northern Fan
+          'M 632,205 C 675,202 718,212 755,232 L 742,250 C 708,232 670,224 634,225 Z'
+        ]
+      },
+      {
+        code: 'HNf',
+        name: 'Crater Floor Fractured / Mafic Unit (Máaz & Séítah)',
+        epoch: 'Noachian – Early Hesperian',
+        color: '#7c3aed', // Deep volcanic violet-indigo
+        stroke: '#c4b5fd',
+        opacity: 0.65,
+        minerals: 'Olivine (Fo55–68 in Séítah), high-Ca pyroxene, plagioclase, minor alteration carbonates/sulfates',
+        lithology: 'Subdivided by Mars 2020 into the upper basaltic/pyroxene-bearing Máaz formation (lava flows/ignimbrites) and lower olivine-cumulate Séítah formation.',
+        significance: 'Confirmed igneous origin by Perseverance PIXL & SHERLOC; provides critical absolute radiometric age anchor for Martian cratering chronology upon sample return.',
+        reference: 'USGS SIM 3464; Farley et al. (2022); Liu et al. (2022)',
+        polygons: [
+          // Main Jezero Crater Floor (Máaz & Séítah complexes)
+          'M 465,355 C 510,285 585,255 675,258 C 765,262 845,315 872,395 C 895,465 878,548 825,605 C 772,660 692,682 605,672 C 525,662 465,610 442,540 C 430,502 435,478 465,480 C 495,482 522,455 520,425 C 518,395 492,380 465,355 Z'
+        ]
+      },
+      {
+        code: 'Nnp2',
+        name: 'Nili Planum Olivine-Bearing & Capping Unit',
+        epoch: 'Middle – Late Noachian',
+        color: '#16a34a', // Olivine green
+        stroke: '#86efac',
+        opacity: 0.58,
+        minerals: 'Mg-rich olivine, localized Mg-carbonate & serpentine alteration',
+        lithology: 'Dark-toned, cliff-forming, regionally extensive olivine-bearing stratified unit draping Nili Planum west and southwest of Jezero.',
+        significance: 'Part of the circum-Isidis regional olivine-rich unit (~70,000 km²); eroded by Neretva Vallis to supply olivine and carbonate detritus into Jezero.',
+        reference: 'USGS SIM 3464; Mustard et al. (2009); Kremer et al. (2019)',
+        polygons: [
+          // Western & Southwestern Nili Planum olivine-rich plains
+          'M 30,220 L 295,210 C 335,245 348,305 320,355 L 220,368 L 160,395 L 255,412 L 325,435 C 335,515 365,605 425,675 L 340,860 L 30,860 Z',
+          // Northwestern Nili Planum mesa
+          'M 180,35 L 485,35 L 450,155 C 385,175 315,170 245,145 L 180,95 Z'
+        ]
+      },
+      {
+        code: 'Nnp1',
+        name: 'Nili Planum Layered Phyllosilicate Plains',
+        epoch: 'Early – Middle Noachian',
+        color: '#0284c7', // Slate-sky blue
+        stroke: '#7dd3fc',
+        opacity: 0.55,
+        minerals: 'Fe/Mg-smectites (nontronite/saponite), Al-phyllosilicates, low-Ca pyroxene',
+        lithology: 'Light-toned, polygonally fractured, layered Noachian sedimentary and volcaniclastic plains underlying the olivine-bearing unit.',
+        significance: 'Records early Noachian aqueous alteration and groundwater/pedogenic weathering across Nili Planum prior to Jezero lake formation.',
+        reference: 'USGS SIM 3464 (Sun & Stack, 2020); Ehlmann et al. (2009)',
+        polygons: [
+          // West-central Nili Planum incised by Neretva Vallis
+          'M 245,145 C 315,170 385,175 450,155 L 415,245 C 375,285 352,335 342,380 L 220,368 L 320,355 C 348,305 335,245 295,210 Z',
+          // Eastern plains outside Pliva Vallis
+          'M 945,280 L 1175,260 L 1175,680 L 930,645 C 965,545 972,415 945,280 Z'
+        ]
+      },
+      {
+        code: 'Nnb',
+        name: 'Jezero Crater Rim, Wall & Noachian Megabreccia',
+        epoch: 'Early – Middle Noachian',
+        color: '#b45309', // Warm sienna / rust-brown
+        stroke: '#fbbf24',
+        opacity: 0.68,
+        pattern: 'url(#brecciaPattern)',
+        minerals: 'Low-Ca pyroxene, Fe/Mg-smectites, chlorite, localized pre-impact carbonates',
+        lithology: 'Steeply sloping crater rim crest, terraced wall slump blocks, and ancient Noachian crustal megabreccia blocks (tens of meters across) uplifted by the Jezero impact.',
+        significance: 'Exposes the deepest, oldest Noachian crustal stratigraphy (~3.8–4.0 Ga) excavated from beneath Nili Planum; major focus of Perseverance Crater Rim Campaign.',
+        reference: 'USGS SIM 3464; Scheller & Ehlmann (2020)',
+        polygons: [
+          // Jezero Crater Annular Rim & Wall Ring (breached at Neretva W, Sava N, Pliva E)
+          // Northwestern Rim Sector (between Neretva W and Sava N)
+          'M 342,378 C 358,285 415,205 505,165 L 538,155 L 552,198 C 485,228 432,285 408,365 L 385,382 Z',
+          // Northeastern & Eastern Rim Sector (between Sava N and Pliva E)
+          'M 628,152 C 745,158 855,215 915,315 C 935,350 946,385 950,418 L 892,422 C 882,342 825,268 745,232 C 698,210 655,202 622,202 Z',
+          // Southern Rim Sector (between Pliva E and Neretva W)
+          'M 948,472 C 932,595 845,698 722,732 C 595,765 462,718 392,612 C 362,566 346,512 340,452 L 404,452 C 414,545 478,632 572,665 C 675,702 792,665 855,578 C 882,542 894,505 896,470 Z',
+          // Ancient Megabreccia Massifs in Northern/Eastern Highlands
+          'M 685,42 L 960,42 L 945,195 C 865,150 775,125 685,120 Z'
+        ]
+      },
+      {
+        code: 'Ac',
+        name: 'Young Impact Craters & Eolian Bedforms',
+        epoch: 'Late Hesperian – Amazonian',
+        color: '#64748b', // Cool slate-gray
+        stroke: '#cbd5e1',
+        opacity: 0.72,
+        minerals: 'Unaltered basaltic sand, pyroxene, plagioclase, dust',
+        lithology: 'Fresh rayed/bowl-shaped impact craters (e.g., Belva Crater) with continuous ejecta blankets and active/inactive transverse aeolian ridges (TARs).',
+        significance: 'Post-lacustrine impact excavation (Belva Crater) provides natural vertical cross-sections through Western Delta strata.',
+        reference: 'USGS SIM 3464 (Sun & Stack, 2020)',
+        polygons: [
+          // Belva Crater & Ejecta on Western Delta margin
+          'M 455,392 C 464,388 474,392 477,401 C 480,410 474,419 465,421 C 456,423 448,417 446,408 C 445,400 449,394 455,392 Z',
+          // North-central floor young crater
+          'M 685,335 C 696,331 708,337 711,348 C 714,359 707,370 696,372 C 685,374 675,367 673,356 C 672,346 678,338 685,335 Z',
+          // Southeastern floor crater
+          'M 755,545 C 765,542 775,547 778,557 C 780,567 774,576 764,578 C 754,580 745,573 743,563 C 742,554 748,547 755,545 Z'
+        ]
+      }
+    ];
+
+    // ----------------------------------------------------------------------------
+    // 3. MEANINGFUL GEOLOGICAL EXPLORATION ZONES (JZ-01 to JZ-06)
+    // ----------------------------------------------------------------------------
+    const EXPLORATION_ZONES = [
+      {
+        id: 'JZ-01',
+        name: 'Western Fan-Delta Complex (Neretva Vallis Mouth)',
+        classification: 'Fluvio-Lacustrine Deltaic System (Unit HNlfd)',
+        evidenceBadge: 'Confirmed Observation',
+        badgeColor: 'emerald',
+        unitCode: 'HNlfd',
+        center: { x: 465, y: 432 },
+        polygon: 'M 405,388 C 425,372 458,368 486,382 C 514,396 530,420 526,445 C 522,470 502,492 472,496 C 442,500 416,482 405,455 C 398,435 396,405 405,388 Z',
+        strokeColor: '#facc15',
+        mineralogy: 'Fe/Mg-smectites, Mg-carbonates, sulfates (gypsum/anhydrite), hydrated silica, organic carbon signatures',
+        observations: [
+          'Confirmed steeply dipping foreset beds and horizontal topset conglomerates at Kodiak Butte proving standing paleolake water levels (~ -2,395 m).',
+          'Finely laminated sulfate- and phyllosilicate-bearing mudstones documented at Wildcat Ridge / Hogwallow Flats.',
+          'High-energy boulder conglomerates at upper fan apex recording late-stage flood episodes.'
+        ],
+        significance: 'Highest biosignature preservation potential in Jezero Crater; primary core-sampling target for Mars Sample Return.',
+        source: 'USGS SIM 3464 (Sun & Stack, 2020); Mangold et al. (2021); Farley et al. (2022)'
+      },
+      {
+        id: 'JZ-02',
+        name: 'Marginal Carbonate-Bearing Terraces',
+        classification: 'Lacustrine Shoreline / Chemical & Clastic Margin (Unit HNm)',
+        evidenceBadge: 'Orbital & Rover Confirmed',
+        badgeColor: 'teal',
+        unitCode: 'HNm',
+        center: { x: 472, y: 292 },
+        polygon: 'M 404,384 C 414,332 442,278 492,238 C 522,214 552,202 572,226 C 542,248 504,282 478,325 C 462,352 452,374 435,386 Z',
+        strokeColor: '#2dd4bf',
+        mineralogy: 'Magnesite / hydromagnesite (MgCO₃), olivine, Fe/Mg-smectites, amorphous silica',
+        observations: [
+          'Strongest orbital CRISM 2.30 & 2.50 µm Mg-carbonate absorption bands along the inner western rim.',
+          'Perseverance Margin Unit campaign (2023–2024) confirmed carbonate-cemented sandstones and altered olivine-carbonate lithologies.',
+          'Elevation band closely tracks the ~ -2,395 m paleolake shoreline contour.'
+        ],
+        significance: 'Critical archive of Noachian atmospheric CO₂ sequestration and alkaline-to-neutral paleolake water chemistry.',
+        source: 'USGS SIM 3464; Horgan et al. (2020); NASA Mars 2020 Margin Campaign'
+      },
+      {
+        id: 'JZ-03',
+        name: 'Crater Floor — Máaz & Séítah Igneous Complexes',
+        classification: 'Mafic Volcanic & Olivine-Cumulate Floor (Unit HNf)',
+        evidenceBadge: 'Confirmed Observation',
+        badgeColor: 'purple',
+        unitCode: 'HNf',
+        center: { x: 645, y: 455 },
+        polygon: 'M 525,335 C 585,295 685,295 755,345 C 815,390 825,485 775,555 C 725,615 620,625 555,575 C 505,535 495,465 525,335 Z',
+        strokeColor: '#a78bfa',
+        mineralogy: 'Olivine (Fo55–68), augite/pigeonite pyroxenes, plagioclase, Fe-Ti oxides, minor secondary carbonates & perchlorates',
+        observations: [
+          'Séítah formation confirmed as coarse-grained olivine cumulate rock altered by limited aqueous fluids.',
+          'Máaz formation confirmed as overlying basaltic/trachyandesitic lava flows and pyroclastic deposits.',
+          'Multiple igneous rock cores cached at Three Forks Sample Depot.'
+        ],
+        significance: 'Provides high-precision radiometric geochronology anchor to calibrate the age of Jezero Crater and the Noachian-Hesperian boundary.',
+        source: 'USGS SIM 3464; Farley et al. (2022); Liu et al. (2022)'
+      },
+      {
+        id: 'JZ-04',
+        name: 'Neretva & Sava Valles Inlet Channels',
+        classification: 'Noachian / Early Hesperian Fluvial Valley Networks',
+        evidenceBadge: 'Scientific Interpretation',
+        badgeColor: 'sky',
+        unitCode: 'Fluvial / Nnp1',
+        center: { x: 315, y: 392 },
+        polygon: 'M 145,355 L 412,388 L 408,438 L 145,425 Z',
+        strokeColor: '#38bdf8',
+        mineralogy: 'Detrital olivine, low-Ca pyroxene, Fe/Mg-smectites, transported carbonates',
+        observations: [
+          'Neretva Vallis breaches the western Jezero rim with incised meanders, terraces, and inverted channel deposits.',
+          'Sava Vallis breaches the northern rim, feeding the older eroded Northern Fan deposit.',
+          'Drained a >11,000 km² watershed across Nili Planum.'
+        ],
+        significance: 'Demonstrates sustained surface runoff and sediment transport from Nili Planum highlands into paleolake Jezero.',
+        source: 'USGS SIM 3464 (Sun & Stack, 2020); Fassett & Head (2005)'
+      },
+      {
+        id: 'JZ-05',
+        name: 'Pliva Vallis Outlet Breach',
+        classification: 'Paleolake Spillway / Eastern Outlet Canyon',
+        evidenceBadge: 'Scientific Interpretation',
+        badgeColor: 'cyan',
+        unitCode: 'Fluvial / Nnb',
+        center: { x: 945, y: 445 },
+        polygon: 'M 885,412 L 1065,405 L 1065,482 L 885,478 Z',
+        strokeColor: '#22d3ee',
+        mineralogy: 'Exposed rim breccia, basaltic wall rock, fluvial lag deposits',
+        observations: [
+          'Deep V-shaped canyon incising the eastern Jezero Crater rim at ~ -2,395 m elevation.',
+          'Elevation matches the upper topset-foreset transition of the Western Delta.'
+        ],
+        significance: 'Confirms Jezero operated as an open-basin lake where water overtopped the eastern rim and drained toward Isidis Planitia.',
+        source: 'USGS SIM 3464; Fassett & Head (2005); Goudge et al. (2015)'
+      },
+      {
+        id: 'JZ-06',
+        name: 'Nili Planum Noachian Highlands & Megabreccia',
+        classification: 'Ancient Noachian Crustal Basement & Olivine Plains (Units Nnp / Nnb)',
+        evidenceBadge: 'Orbital & Rim Ascent Target',
+        badgeColor: 'amber',
+        unitCode: 'Nnb / Nnp2',
+        center: { x: 255, y: 555 },
+        polygon: 'M 135,455 L 345,455 L 415,645 L 215,720 Z',
+        strokeColor: '#f59e0b',
+        mineralogy: 'Low-Ca pyroxene, Fe/Mg-smectites, chlorite, serpentine, Mg-olivine, pre-impact carbonates',
+        observations: [
+          'Exposes deep crustal megabreccia blocks (>3.9 Ga) uplifted during the Jezero impact.',
+          'Capped regionally by the Nili Planum olivine-bearing unit (Nnp2) and layered phyllosilicate plains (Nnp1).',
+          'Target of Perseverance 2024–2026 Crater Rim Ascent & Nili Planum exploration campaign.'
+        ],
+        significance: 'Samples early Noachian crustal evolution, hydrothermal systems, and the oldest habitable environments on Mars.',
+        source: 'USGS SIM 3464; Ehlmann et al. (2009); NASA Mars 2020 Rim Campaign'
+      }
+    ];
+
+    // ----------------------------------------------------------------------------
+    // 4. POINTS OF INTEREST (OUTCROPS, ORBITAL MINERALS, ROVER & PLANNED TARGETS)
+    // ----------------------------------------------------------------------------
+    const POIS = [
+      // Confirmed Mission / Rover Locations
+      {
+        id: 'poi-landing',
+        name: 'Octavia E. Butler Landing Site',
+        category: 'rover',
+        evidence: 'Confirmed Observation',
+        evidenceType: 'confirmed',
+        lat: 18.4447,
+        lon: 77.4508,
+        unit: 'HNf (Máaz Fm)',
+        mineralogy: 'Basaltic/pyroxene-rich regolith, plagioclase, Fe-oxides',
+        summary: 'Touchdown site of NASA’s Perseverance rover and Ingenuity Mars Helicopter on February 18, 2021 (Sol 0). Scoured by descent stage thrusters revealing coarse igneous cobbles.',
+        significance: 'Mission origin point on the western crater floor ~2.2 km southeast of the Western Delta scarp.',
+        source: 'NASA Mars 2020 / JPL Localization'
+      },
+      {
+        id: 'poi-three-forks',
+        name: 'Three Forks Sample Depot',
+        category: 'rover',
+        evidence: 'Confirmed Observation',
+        evidenceType: 'confirmed',
+        lat: 18.4265,
+        lon: 77.4190,
+        unit: 'HNf / HNlfd Margin',
+        mineralogy: 'Igneous (Máaz/Séítah) & sedimentary deltaic sample tubes',
+        summary: 'First off-world sample depot constructed on another planet (Dec 2022 – Jan 2023). Ten titanium sample tubes placed in a strategic zig-zag pattern as a backup cache for Mars Sample Return.',
+        significance: 'Preserves paired igneous and sedimentary cores ready for potential Sample Recovery Helicopter retrieval.',
+        source: 'NASA Mars 2020 Mission Operations'
+      },
+      {
+        id: 'poi-kodiak',
+        name: 'Kodiak Butte (Delta Remnant)',
+        category: 'outcrop',
+        evidence: 'Confirmed Observation',
+        evidenceType: 'confirmed',
+        lat: 18.4045,
+        lon: 77.3925,
+        unit: 'HNlfd',
+        mineralogy: 'Sandstone, siltstone, pebble-cobble conglomerate',
+        summary: 'Isolated erosional remnant ~1 km south of the main Western Delta front. Mastcam-Z long-distance imaging revealed textbook Gilbert-type deltaic topset, inclined foreset, and horizontal bottomset strata.',
+        significance: 'Provided the first definitive ground-truth proof that Jezero Crater hosted a standing paleolake fed by a prograding river delta.',
+        source: 'Mangold et al. (2021), Science'
+      },
+      {
+        id: 'poi-wildcat',
+        name: 'Wildcat Ridge & Hogwallow Flats',
+        category: 'outcrop',
+        evidence: 'Confirmed Observation',
+        evidenceType: 'confirmed',
+        lat: 18.4580,
+        lon: 77.3860,
+        unit: 'HNlfd (Lower Delta Front)',
+        mineralogy: 'Ca/Mg-sulfates, Fe/Mg-smectites, aromatic organic compounds',
+        summary: 'Finely laminated, sulfate-rich fine-grained mudstone outcrop at the base of the Western Delta. SHERLOC Raman/fluorescence spectroscopy detected the strongest organic matter signals of the crater floor/delta front campaign.',
+        significance: 'Low-energy lacustrine depositional setting ideal for concentrating and preserving ancient organic molecules.',
+        source: 'Farley et al. (2022); Sharma et al. (2023), Nature'
+      },
+      {
+        id: 'poi-hawksbill',
+        name: 'Hawksbill Gap & Enchanted Lake',
+        category: 'outcrop',
+        evidence: 'Confirmed Observation',
+        evidenceType: 'confirmed',
+        lat: 18.4510,
+        lon: 77.3965,
+        unit: 'HNlfd',
+        mineralogy: 'Phyllosilicates, sulfates, layered siltstones & sandstones',
+        summary: 'Stratigraphic section ascending the lower Western Delta front where Perseverance investigated fine-grained lacustrine mudstones transitioning into coarser deltaic sandstones.',
+        significance: 'Establishes the vertical stratigraphic framework of early paleolake Jezero.',
+        source: 'NASA Mars 2020 Delta Front Campaign'
+      },
+      {
+        id: 'poi-belva',
+        name: 'Belva Crater (Delta Impact Exposure)',
+        category: 'outcrop',
+        evidence: 'Confirmed Observation',
+        evidenceType: 'confirmed',
+        lat: 18.4810,
+        lon: 77.3680,
+        unit: 'Ac / HNlfd',
+        mineralogy: 'Exposed dipping deltaic sandstones, conglomerates & impact breccia',
+        summary: '0.9-km-wide Late Hesperian/Amazonian impact crater excavated into the upper Western Delta. Steep inner walls expose thick, dipping fluvial-deltaic cross-beds in 3D cross-section.',
+        significance: 'Natural geological trench exposing deep internal deltaic architecture without drilling.',
+        source: 'USGS SIM 3464; NASA Mars 2020'
+      },
+      {
+        id: 'poi-bright-angel',
+        name: 'Bright Angel & Neretva Vallis Margin',
+        category: 'rover',
+        evidence: 'Confirmed Observation',
+        evidenceType: 'confirmed',
+        lat: 18.4950,
+        lon: 77.3350,
+        unit: 'HNlfd / HNm Contact',
+        mineralogy: 'Light-toned mudstones, Ca-sulfate veins, Fe-phosphate/sulfide reaction fronts ("Cheyava Falls")',
+        summary: 'Light-toned layered outcrops exposed along the northern margin of Neretva Vallis channel, including the vein-bearing mudstone "Cheyava Falls" displaying millimeter-scale leopard-spot redox features.',
+        significance: 'Exhibits chemical signatures (organic compounds, Fe-phosphate nodules, calcium sulfate veins) indicative of low-temperature aqueous redox reactions.',
+        source: 'NASA Mars 2020 Science Update (2024)'
+      },
+      {
+        id: 'poi-seitah',
+        name: 'South Séítah Olivine Cumulate Outcrop',
+        category: 'outcrop',
+        evidence: 'Confirmed Observation',
+        evidenceType: 'confirmed',
+        lat: 18.4180,
+        lon: 77.4280,
+        unit: 'HNf (Séítah Fm)',
+        mineralogy: 'Mg-Fe olivine (65%), augite pyroxene, secondary Mg-Fe carbonate & sulfate',
+        summary: 'Rugged, ridged olivine-rich bedrock exposed beneath the Máaz formation. PIXL X-ray lithochemistry revealed poikilitic igneous cumulate textures formed in a slowly cooling magma body.',
+        significance: 'Demonstrates early magmatic differentiation and subsequent low-temperature carbonation.',
+        source: 'Liu et al. (2022), Science'
+      },
+      // Orbital CRISM Mineral Detections
+      {
+        id: 'poi-crism-carb',
+        name: 'CRISM Mg-Carbonate Marginal Belt',
+        category: 'mineral',
+        evidence: 'Orbital Mineral Detection',
+        evidenceType: 'orbital',
+        lat: 18.5450,
+        lon: 77.3850,
+        unit: 'HNm',
+        mineralogy: 'Magnesite / Hydromagnesite (CRISM 2.30 & 2.50 µm bands)',
+        summary: 'Orbital MRO CRISM hyperspectral mapping identifies intense Mg-carbonate absorptions concentrated along the inner western crater margin between -2,450 m and -2,380 m elevation.',
+        significance: 'Interpreted as shoreline carbonate precipitates from paleolake Jezero waters (Horgan et al., 2020).',
+        source: 'MRO CRISM / Horgan et al. (2020), Icarus'
+      },
+      {
+        id: 'poi-crism-nfan',
+        name: 'Northern Fan Smectite–Carbonate Zone',
+        category: 'mineral',
+        evidence: 'Orbital Mineral Detection',
+        evidenceType: 'orbital',
+        lat: 18.6950,
+        lon: 77.5200,
+        unit: 'HNlfd (Northern Fan)',
+        mineralogy: 'Fe/Mg-smectites (nontronite/saponite), Mg-carbonate, low-Ca pyroxene',
+        summary: 'Eroded fan-delta remnant at the mouth of Sava Vallis along the northern crater floor, exhibiting strong orbital phyllosilicate and carbonate spectral signatures.',
+        significance: 'Records an earlier or contemporaneous northern fluvial input into paleolake Jezero.',
+        source: 'USGS SIM 3464; Goudge et al. (2015)'
+      },
+      {
+        id: 'poi-crism-olivine',
+        name: 'Nili Planum Regional Olivine Exposure',
+        category: 'mineral',
+        evidence: 'Orbital Mineral Detection',
+        evidenceType: 'orbital',
+        lat: 18.3100,
+        lon: 77.1200,
+        unit: 'Nnp2',
+        mineralogy: 'Forsteritic Olivine (CRISM 1.0–1.5 µm broad absorption)',
+        summary: 'Cliff-forming regional olivine-rich unit west of Jezero Crater across Nili Planum, partially altered to Mg-carbonate and serpentine along fractures.',
+        significance: 'Source lithology for olivine-rich sediments transported through Neretva Vallis.',
+        source: 'Mustard et al. (2009); Kremer et al. (2019)'
+      },
+      // Strategic / Planned Traverse Targets (Approximate coordinates)
+      {
+        id: 'poi-rim-ascent',
+        name: 'Western Crater Rim Ascent & Pico Turquino',
+        category: 'planned',
+        evidence: 'Planned / Approximate Target',
+        evidenceType: 'planned',
+        lat: 18.4620,
+        lon: 77.2650,
+        unit: 'Nnb (Rim Megabreccia)',
+        mineralogy: 'Low-Ca pyroxene, Fe/Mg-smectites, chlorite, pre-impact carbonates (Orbital)',
+        summary: 'Approximate target corridor (~18.46°N, 77.27°E) where Perseverance ascends the steep western crater rim (~300 m vertical climb) to investigate ancient Noachian crustal megabreccia and hydrothermal rocks.',
+        significance: 'Transitions mission from lakebed/delta deposits into >3.9 Ga Noachian crustal basement.',
+        source: 'NASA Mars 2020 Extended Mission Planning (Approx. Coordinates)'
+      },
+      {
+        id: 'poi-pliva-outlet',
+        name: 'Pliva Vallis Spillway Headcut',
+        category: 'planned',
+        evidence: 'Scientific Interpretation',
+        evidenceType: 'interpretation',
+        lat: 18.3950,
+        lon: 77.9600,
+        unit: 'Nnb / Fluvial Outlet',
+        mineralogy: 'Basaltic wall rock, incised rim breccia (Orbital HiRISE/CTX)',
+        summary: 'Eastern breach of Jezero Crater rim at ~ -2,395 m elevation where overflowing paleolake water carved Pliva Vallis eastward toward Isidis Planitia.',
+        significance: 'Hydrologic control point defining maximum paleolake water surface elevation.',
+        source: 'USGS SIM 3464; Fassett & Head (2005)'
+      }
+    ];
+
+    // Perseverance Rover Traverse Path (Simplified milestone waypoints from Landing Site -> Séítah -> Three Forks -> Delta Front -> Margin Unit -> Neretva Vallis -> Western Rim)
+    const ROVER_TRAVERSE_LATLON = [
+      [18.4447, 77.4508], // Octavia E. Butler Landing
+      [18.4360, 77.4480], // Artuby Ridge
+      [18.4230, 77.4340], // South Séítah entry
+      [18.4180, 77.4280], // South Séítah outcrop
+      [18.4265, 77.4190], // Three Forks Sample Depot
+      [18.4420, 77.4050], // Cape Nukshak / Delta approach
+      [18.4510, 77.3965], // Hawksbill Gap / Enchanted Lake
+      [18.4580, 77.3860], // Wildcat Ridge
+      [18.4720, 77.3760], // Upper Fan / Belva south
+      [18.4840, 77.3580], // Margin Unit traverse
+      [18.4950, 77.3350], // Bright Angel / Neretva Vallis margin
+      [18.4750, 77.3050], // Dox Castle / Rim approach
+      [18.4620, 77.2650]  // Western Crater Rim Ascent (approx.)
+    ];
+
+    // ----------------------------------------------------------------------------
+    // 5. APPLICATION STATE & DOM REFERENCES
+    // ----------------------------------------------------------------------------
+    const state = {
+      zoom: 1.0,
+      panX: 0,
+      panY: 0,
+      isDragging: false,
+      dragStartX: 0,
+      dragStartY: 0,
+      dragMoved: false,
+      layers: {
+        terrain: true,
+        geology: true,
+        hydrology: true,
+        zones: true,
+        minerals: true,
+        pois: true
+      },
+      geoOpacity: 0.68,
+      selectedItem: null // { type: 'zone'|'poi'|'unit', data: ... }
+    };
+
+    const terrainCanvas = document.getElementById('terrainCanvas');
+    const ctx = terrainCanvas.getContext('2d');
+    const mapSvg = document.getElementById('mapSvg');
+    const mapWorldGroup = document.getElementById('mapWorldGroup');
+    const mapViewport = document.getElementById('mapViewport');
+
+    // Offscreen pre-rendered high-resolution Martian hillshade terrain buffer
+    const offscreenTerrain = document.createElement('canvas');
+    offscreenTerrain.width = WORLD_W;
+    offscreenTerrain.height = WORLD_H;
+    const offCtx = offscreenTerrain.getContext('2d');
+
+    // ----------------------------------------------------------------------------
+    // 6. PROCEDURAL PHYSICALLY-GROUNDED DEM & HILLSHADE GENERATOR
+    // ----------------------------------------------------------------------------
+    // Computes realistic elevation (meters relative to Mars datum) across Jezero & Nili Planum:
+    // - Nili Planum (west): ~ -2,100 m to -2,250 m
+    // - Jezero Crater Rim (radius ~318 px = 22.5 km around (650, 455)): peaks around -1,950 m
+    // - Jezero Crater Floor (inside rim): ~ -2,560 m to -2,620 m
+    // - Western Delta fan wedge: rises from -2,550 m at toe to -2,380 m at apex
+    // - Neretva Vallis (W), Sava Vallis (N), Pliva Vallis (E): incised canyons cutting the rim
+    function pseudoNoise(x, y) {
+      const n1 = Math.sin(x * 0.018 + y * 0.013) * Math.cos(x * 0.011 - y * 0.019);
+      const n2 = Math.sin(x * 0.055 - y * 0.047) * 0.5;
+      const n3 = Math.cos(x * 0.14 + y * 0.12) * 0.22;
+      const n4 = Math.sin(x * 0.35 + y * 0.29) * 0.08;
+      return n1 + n2 + n3 + n4;
+    }
+
+    function getElevationAt(x, y) {
+      const cx = 650, cy = 455;
+      const dx = x - cx;
+      const dy = y - cy;
+      // Slightly elliptical crater (45 km E-W, ~43 km N-S)
+      const r = Math.sqrt(dx * dx + (dy * 1.04) * (dy * 1.04));
+      const rimRadius = 318; // ~22.5 km radius = 45 km diameter
+
+      // Base regional slope from Nili Planum (West, higher) toward Isidis (East, lower)
+      let elev = -2220 - (x - 300) * 0.22;
+
+      // Crater bowl & raised ejecta rim profile
+      if (r < rimRadius + 95) {
+        const normR = r / rimRadius;
+        if (normR < 0.78) {
+          // Flat-ish crater floor (-2580 m)
+          elev = -2585 + (normR / 0.78) * 35;
+        } else if (normR < 1.0) {
+          // Steep inner crater wall rising from -2550 to -1960 m
+          const t = (normR - 0.78) / 0.22;
+          const smoothT = t * t * (3 - 2 * t);
+          elev = -2550 + smoothT * 590;
+        } else {
+          // Outer rim ejecta apron sloping back to plains
+          const t = Math.min(1, (r - rimRadius) / 95);
+          const decay = (1 - t) * (1 - t);
+          elev = elev + decay * 280;
+        }
+      }
+
+      // Western Delta topographic fan mound around (455, 432)
+      const dDelta = Math.hypot(x - 455, y - 432);
+      if (dDelta < 75) {
+        const fanT = 1 - dDelta / 75;
+        elev += fanT * fanT * 135;
+      }
+
+      // Northern Delta remnant mound around (590, 235)
+      const dNFan = Math.hypot(x - 590, y - 235);
+      if (dNFan < 52) {
+        const fanT = 1 - dNFan / 52;
+        elev += fanT * fanT * 95;
+      }
+
+      // Neretva Vallis western valley incision (winding path from x=0..415, y~395..425)
+      const neretvaY = 405 + Math.sin(x * 0.025) * 14 - (x > 250 ? (x - 250) * 0.08 : 0);
+      if (x < 420) {
+        const distN = Math.abs(y - neretvaY);
+        if (distN < 24) {
+          const cut = Math.cos((distN / 24) * (Math.PI / 2));
+          elev -= cut * cut * 360;
+        }
+      }
+
+      // Sava Vallis northern inlet incision (from y=0..210, x~575..595)
+      const savaX = 582 + Math.sin(y * 0.03) * 12;
+      if (y < 215) {
+        const distS = Math.abs(x - savaX);
+        if (distS < 20) {
+          const cut = Math.cos((distS / 20) * (Math.PI / 2));
+          elev -= cut * cut * 330;
+        }
+      }
+
+      // Pliva Vallis eastern outlet breach (from x=885..1200, y~445)
+      const plivaY = 445 + Math.sin((x - 885) * 0.028) * 12;
+      if (x > 880) {
+        const distP = Math.abs(y - plivaY);
+        if (distP < 24) {
+          const cut = Math.cos((distP / 24) * (Math.PI / 2));
+          elev -= cut * cut * 420;
+        }
+      }
+
+      // Small secondary impact craters (Belva at 462,406; Floor craters at 692,352 & 760,560)
+      const smallCraters = [
+        { cx: 462, cy: 406, rad: 15, depth: 75 },
+        { cx: 692, cy: 352, rad: 18, depth: 85 },
+        { cx: 760, cy: 560, rad: 16, depth: 75 },
+        { cx: 235, cy: 265, rad: 22, depth: 110 },
+        { cx: 830, cy: 130, rad: 25, depth: 120 }
+      ];
+      for (const sc of smallCraters) {
+        const d = Math.hypot(x - sc.cx, y - sc.cy);
+        if (d < sc.rad * 1.35) {
+          if (d < sc.rad) {
+            elev -= (1 - (d / sc.rad) ** 2) * sc.depth;
+          } else {
+            const rimT = 1 - (d - sc.rad) / (sc.rad * 0.35);
+            elev += rimT * (sc.depth * 0.25);
+          }
+        }
+      }
+
+      // Multi-scale geologic surface roughness
+      const rough = pseudoNoise(x, y) * 28 + pseudoNoise(x * 2.7, y * 2.7) * 10;
+      return elev + rough;
+    }
+
+    function generateHillshadeBuffer() {
+      const imgData = offCtx.createImageData(WORLD_W, WORLD_H);
+      const data = imgData.data;
+
+      // Precompute elevation grid for fast finite-difference hillshading & contours
+      const elevGrid = new Float32Array(WORLD_W * WORLD_H);
+      for (let y = 0; y < WORLD_H; y++) {
+        for (let x = 0; x < WORLD_W; x++) {
+          elevGrid[y * WORLD_W + x] = getElevationAt(x, y);
+        }
+      }
+
+      // Illumination vector (NW sun azimuth 315°, altitude 42° — classic planetary cartography)
+      const azimuth = (315 * Math.PI) / 180;
+      const altitude = (42 * Math.PI) / 180;
+      const lx = Math.cos(altitude) * Math.cos(azimuth);
+      const ly = Math.cos(altitude) * Math.sin(azimuth);
+      const lz = Math.sin(altitude);
+
+      for (let y = 1; y < WORLD_H - 1; y++) {
+        for (let x = 1; x < WORLD_W - 1; x++) {
+          const idx = y * WORLD_W + x;
+          const e = elevGrid[idx];
+          const dzdx = (elevGrid[idx + 1] - elevGrid[idx - 1]) * 0.16;
+          const dzdy = (elevGrid[idx + WORLD_W] - elevGrid[idx - WORLD_W]) * 0.16;
+
+          // Surface normal
+          const invLen = 1 / Math.sqrt(dzdx * dzdx + dzdy * dzdy + 1);
+          const nx = -dzdx * invLen;
+          const ny = -dzdy * invLen;
+          const nz = invLen;
+
+          let shade = nx * lx + ny * ly + nz * lz;
+          shade = Math.max(0.15, Math.min(1.0, shade * 1.15));
+
+          // Hypsometric Martian tint (dark basaltic basin floor -> warm ochre rim/highlands)
+          const normElev = Math.max(0, Math.min(1, (e + 2620) / 720));
+          let r = 42 + normElev * 68;
+          let g = 38 + normElev * 54;
+          let b = 44 + normElev * 42;
+
+          // Subtle topographic contour lines every 80 meters
+          const contourInterval = 80;
+          const mod = Math.abs(e % contourInterval);
+          const isContour = mod < 2.2 || mod > contourInterval - 2.2;
+          const isMajorContour = Math.abs(e % 240) < 2.6;
+
+          r *= shade * 1.35;
+          g *= shade * 1.35;
+          b *= shade * 1.35;
+
+          if (isMajorContour) {
+            r = r * 0.65 + 95 * 0.35;
+            g = g * 0.65 + 115 * 0.35;
+            b = b * 0.65 + 140 * 0.35;
+          } else if (isContour) {
+            r = r * 0.82 + 75 * 0.18;
+            g = g * 0.82 + 90 * 0.18;
+            b = b * 0.82 + 110 * 0.18;
+          }
+
+          const pIdx = idx * 4;
+          data[pIdx] = Math.min(255, Math.max(0, r));
+          data[pIdx + 1] = Math.min(255, Math.max(0, g));
+          data[pIdx + 2] = Math.min(255, Math.max(0, b));
+          data[pIdx + 3] = 255;
+        }
+      }
+
+      offCtx.putImageData(imgData, 0, 0);
+    }
+
+    // ----------------------------------------------------------------------------
+    // 7. RENDER CANVAS TERRAIN & LAT/LON GRATICULE
+    // ----------------------------------------------------------------------------
+    function resizeCanvas() {
+      const rect = mapViewport.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      terrainCanvas.width = rect.width * dpr;
+      terrainCanvas.height = rect.height * dpr;
+      terrainCanvas.style.width = `${rect.width}px`;
+      terrainCanvas.style.height = `${rect.height}px`;
+      renderMap();
+    }
+
+    function renderMap() {
+      const rect = mapViewport.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.fillStyle = '#090c12';
+      ctx.fillRect(0, 0, rect.width, rect.height);
+
+      // Apply pan & zoom transform
+      ctx.translate(state.panX, state.panY);
+      ctx.scale(state.zoom, state.zoom);
+
+      if (state.layers.terrain) {
+        ctx.drawImage(offscreenTerrain, 0, 0);
+      } else {
+        ctx.fillStyle = '#0f141f';
+        ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+      }
+
+      // Draw subtle planetary coordinate graticule (0.1° intervals)
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+      ctx.lineWidth = 1 / state.zoom;
+      ctx.font = `${10 / state.zoom}px "JetBrains Mono", monospace`;
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.45)';
+
+      for (let lat = 18.0; lat <= 18.8; lat += 0.1) {
+        const pt = latLonToWorld(lat, REF_LON);
+        if (pt.y >= 0 && pt.y <= WORLD_H) {
+          ctx.beginPath();
+          ctx.moveTo(0, pt.y);
+          ctx.lineTo(WORLD_W, pt.y);
+          ctx.stroke();
+          ctx.fillText(`${lat.toFixed(1)}°N`, 12, pt.y - 4 / state.zoom);
+        }
+      }
+
+      for (let lon = 77.0; lon <= 78.2; lon += 0.1) {
+        const pt = latLonToWorld(REF_LAT, lon);
+        if (pt.x >= 0 && pt.x <= WORLD_W) {
+          ctx.beginPath();
+          ctx.moveTo(pt.x, 0);
+          ctx.lineTo(pt.x, WORLD_H);
+          ctx.stroke();
+          ctx.fillText(`${lon.toFixed(1)}°E`, pt.x + 4 / state.zoom, WORLD_H - 12);
+        }
+      }
+
+      ctx.restore();
+
+      // Sync SVG transform
+      mapWorldGroup.setAttribute(
+        'transform',
+        `translate(${state.panX}, ${state.panY}) scale(${state.zoom})`
+      );
+
+      updateScaleBar();
+    }
+
+    function updateScaleBar() {
+      // Scale bar width fixed around ~96 px on screen -> calculate actual km represented
+      const barPx = 96;
+      const km = barPx / (PX_PER_KM * state.zoom);
+      let displayKm;
+      if (km >= 10) displayKm = Math.round(km);
+      else if (km >= 2) displayKm = km.toFixed(1);
+      else displayKm = km.toFixed(2);
+      document.getElementById('scaleBarLabel').textContent = `${displayKm} km`;
+    }
+
+    // ----------------------------------------------------------------------------
+    // 8. BUILD SVG GEOLOGICAL, HYDROLOGICAL, ZONE & POI LAYERS
+    // ----------------------------------------------------------------------------
+    function createSvgEl(tag, attrs = {}) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [k, v] of Object.entries(attrs)) {
+        el.setAttribute(k, v);
+      }
+      return el;
+    }
+
+    function buildSvgLayers() {
+      const geoGroup = document.getElementById('geologyLayerGroup');
+      const hydroGroup = document.getElementById('hydrologyLayerGroup');
+      const zonesGroup = document.getElementById('zonesLayerGroup');
+      const traverseGroup = document.getElementById('traverseLayerGroup');
+      const mineralsGroup = document.getElementById('mineralsLayerGroup');
+      const poisGroup = document.getElementById('poisLayerGroup');
+      const labelsGroup = document.getElementById('labelsLayerGroup');
+
+      geoGroup.innerHTML = '';
+      hydroGroup.innerHTML = '';
+      zonesGroup.innerHTML = '';
+      traverseGroup.innerHTML = '';
+      mineralsGroup.innerHTML = '';
+      poisGroup.innerHTML = '';
+      labelsGroup.innerHTML = '';
+
+      // 1. Render USGS SIM 3464 Geologic Polygons (in reverse order so younger/stratigraphically higher units draw cleanly on top)
+      const renderOrder = ['Nnb', 'Nnp1', 'Nnp2', 'HNf', 'HNm', 'HNlfd', 'Ac'];
+      renderOrder.forEach(code => {
+        const unit = GEOLOGIC_UNITS.find(u => u.code === code);
+        if (!unit) return;
+        const unitG = createSvgEl('g', {
+          'data-unit': unit.code,
+          opacity: state.geoOpacity
+        });
+
+        unit.polygons.forEach(d => {
+          const path = createSvgEl('path', {
+            d,
+            fill: unit.color,
+            'fill-opacity': '0.55',
+            stroke: unit.stroke,
+            'stroke-width': '1.2',
+            'stroke-opacity': '0.85',
+            class: 'transition-opacity duration-150 hover:brightness-125 cursor-pointer'
+          });
+          path.addEventListener('click', (e) => {
+            if (state.dragMoved) return;
+            e.stopPropagation();
+            selectItem('unit', unit);
+          });
+          path.addEventListener('mousemove', (e) => showTooltip(e, `${unit.code} — ${unit.name}`, unit.epoch));
+          path.addEventListener('mouseleave', hideTooltip);
+          unitG.appendChild(path);
+
+          // Optional pattern overlay (e.g. carbonate crosshatch or breccia stipple)
+          if (unit.pattern) {
+            const patPath = createSvgEl('path', {
+              d,
+              fill: unit.pattern,
+              'pointer-events': 'none'
+            });
+            unitG.appendChild(patPath);
+          }
+        });
+
+        geoGroup.appendChild(unitG);
+      });
+
+      // 2. Render Fluvial Valleys & Paleolake Shoreline (~ -2,395 m)
+      // Paleolake Jezero extent polygon inside inner crater rim
+      const paleolakePoly = createSvgEl('path', {
+        d: 'M 426,392 C 442,315 515,245 615,235 C 725,225 835,280 875,375 C 902,442 885,535 830,595 C 772,658 675,682 585,665 C 495,648 432,578 415,492 C 410,462 415,425 426,392 Z',
+        fill: 'url(#paleolakeGrad)',
+        stroke: '#38bdf8',
+        'stroke-width': '1.6',
+        'stroke-dasharray': '6 4',
+        'pointer-events': 'none'
+      });
+      hydroGroup.appendChild(paleolakePoly);
+
+      // Neretva Vallis (Western Inlet)
+      const neretvaPath = createSvgEl('path', {
+        d: 'M 0,408 Q 95,392 185,412 T 345,398 Q 385,395 415,412',
+        fill: 'none',
+        stroke: '#0ea5e9',
+        'stroke-width': '6',
+        'stroke-linecap': 'round',
+        'stroke-opacity': '0.75',
+        'pointer-events': 'none'
+      });
+      const neretvaCore = createSvgEl('path', {
+        d: 'M 0,408 Q 95,392 185,412 T 345,398 Q 385,395 415,412',
+        fill: 'none',
+        stroke: '#7dd3fc',
+        'stroke-width': '2',
+        'stroke-linecap': 'round',
+        'pointer-events': 'none'
+      });
+      hydroGroup.appendChild(neretvaPath);
+      hydroGroup.appendChild(neretvaCore);
+
+      // Sava Vallis (Northern Inlet)
+      const savaPath = createSvgEl('path', {
+        d: 'M 578,0 Q 592,75 576,135 T 586,212',
+        fill: 'none',
+        stroke: '#0ea5e9',
+        'stroke-width': '5',
+        'stroke-linecap': 'round',
+        'stroke-opacity': '0.75',
+        'pointer-events': 'none'
+      });
+      const savaCore = createSvgEl('path', {
+        d: 'M 578,0 Q 592,75 576,135 T 586,212',
+        fill: 'none',
+        stroke: '#7dd3fc',
+        'stroke-width': '1.8',
+        'stroke-linecap': 'round',
+        'pointer-events': 'none'
+      });
+      hydroGroup.appendChild(savaPath);
+      hydroGroup.appendChild(savaCore);
+
+      // Pliva Vallis (Eastern Outlet Breach)
+      const plivaPath = createSvgEl('path', {
+        d: 'M 886,444 Q 955,436 1025,452 T 1200,440',
+        fill: 'none',
+        stroke: '#06b6d4',
+        'stroke-width': '6.5',
+        'stroke-linecap': 'round',
+        'stroke-opacity': '0.8',
+        'pointer-events': 'none'
+      });
+      const plivaCore = createSvgEl('path', {
+        d: 'M 886,444 Q 955,436 1025,452 T 1200,440',
+        fill: 'none',
+        stroke: '#a5f3fc',
+        'stroke-width': '2',
+        'stroke-dasharray': '8 4',
+        'pointer-events': 'none'
+      });
+      hydroGroup.appendChild(plivaPath);
+      hydroGroup.appendChild(plivaCore);
+
+      // 3. Render Exploration Zones (JZ-01 to JZ-06)
+      EXPLORATION_ZONES.forEach(zone => {
+        const zG = createSvgEl('g', {
+          class: 'cursor-pointer group',
+          'data-zone-id': zone.id
+        });
+
+        const poly = createSvgEl('path', {
+          d: zone.polygon,
+          fill: zone.strokeColor,
+          'fill-opacity': '0.08',
+          stroke: zone.strokeColor,
+          'stroke-width': '2',
+          'stroke-dasharray': '7 4',
+          class: 'transition-all duration-150'
+        });
+
+        // Zone badge pill on map
+        const badgeG = createSvgEl('g', {
+          transform: `translate(${zone.center.x}, ${zone.center.y})`
+        });
+        const badgeBg = createSvgEl('rect', {
+          x: '-24',
+          y: '-10',
+          width: '48',
+          height: '20',
+          rx: '5',
+          fill: '#090c12',
+          'fill-opacity': '0.88',
+          stroke: zone.strokeColor,
+          'stroke-width': '1.3'
+        });
+        const badgeText = createSvgEl('text', {
+          x: '0',
+          y: '3.5',
+          'text-anchor': 'middle',
+          fill: zone.strokeColor,
+          'font-family': 'JetBrains Mono, monospace',
+          'font-size': '10',
+          'font-weight': '700'
+        });
+        badgeText.textContent = zone.id;
+
+        badgeG.appendChild(badgeBg);
+        badgeG.appendChild(badgeText);
+
+        zG.appendChild(poly);
+        zG.appendChild(badgeG);
+
+        zG.addEventListener('mouseenter', () => {
+          poly.setAttribute('fill-opacity', '0.24');
+          poly.setAttribute('stroke-width', '2.8');
+        });
+        zG.addEventListener('mouseleave', () => {
+          const isSel = state.selectedItem?.type === 'zone' && state.selectedItem.data.id === zone.id;
+          poly.setAttribute('fill-opacity', isSel ? '0.26' : '0.08');
+          poly.setAttribute('stroke-width', isSel ? '3' : '2');
+        });
+        zG.addEventListener('mousemove', (e) => showTooltip(e, `${zone.id}: ${zone.name}`, zone.classification));
+        zG.addEventListener('mouseleave', hideTooltip);
+        zG.addEventListener('click', (e) => {
+          if (state.dragMoved) return;
+          e.stopPropagation();
+          selectItem('zone', zone);
+        });
+
+        zonesGroup.appendChild(zG);
+      });
+
+      // 4. Render Perseverance Traverse Line
+      const pts = ROVER_TRAVERSE_LATLON.map(([lat, lon]) => {
+        const p = latLonToWorld(lat, lon);
+        return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+      }).join(' ');
+
+      const travShadow = createSvgEl('polyline', {
+        points: pts,
+        fill: 'none',
+        stroke: '#090c12',
+        'stroke-width': '4',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'pointer-events': 'none'
+      });
+      const travLine = createSvgEl('polyline', {
+        points: pts,
+        fill: 'none',
+        stroke: '#fbbf24',
+        'stroke-width': '2',
+        'stroke-dasharray': '4 3',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'pointer-events': 'none'
+      });
+      traverseGroup.appendChild(travShadow);
+      traverseGroup.appendChild(travLine);
+
+      // 5. Render Orbital CRISM Mineral Indicators (Diamonds / Hexagons)
+      POIS.filter(p => p.category === 'mineral').forEach(poi => {
+        const pos = latLonToWorld(poi.lat, poi.lon);
+        const g = createSvgEl('g', {
+          transform: `translate(${pos.x}, ${pos.y})`,
+          class: 'cursor-pointer'
+        });
+
+        // Spectral detection halo
+        const halo = createSvgEl('circle', {
+          r: '16',
+          fill: '#10b981',
+          'fill-opacity': '0.16',
+          stroke: '#34d399',
+          'stroke-width': '1',
+          'stroke-dasharray': '3 2'
+        });
+        // Diamond icon
+        const diamond = createSvgEl('polygon', {
+          points: '0,-8 8,0 0,8 -8,0',
+          fill: '#059669',
+          stroke: '#a7f3d0',
+          'stroke-width': '1.6'
+        });
+        g.appendChild(halo);
+        g.appendChild(diamond);
+
+        g.addEventListener('mousemove', (e) => showTooltip(e, poi.name, `CRISM Detection • ${poi.unit}`));
+        g.addEventListener('mouseleave', hideTooltip);
+        g.addEventListener('click', (e) => {
+          if (state.dragMoved) return;
+          e.stopPropagation();
+          selectItem('poi', poi);
+        });
+
+        mineralsGroup.appendChild(g);
+      });
+
+      // 6. Render Mission Targets & Geological Outcrops
+      POIS.filter(p => p.category !== 'mineral').forEach(poi => {
+        const pos = latLonToWorld(poi.lat, poi.lon);
+        const g = createSvgEl('g', {
+          transform: `translate(${pos.x}, ${pos.y})`,
+          class: 'cursor-pointer'
+        });
+
+        if (poi.id === 'poi-landing' || poi.id === 'poi-three-forks') {
+          // Star / Landing Marker
+          const ring = createSvgEl('circle', {
+            r: '11',
+            fill: '#f59e0b',
+            'fill-opacity': '0.25',
+            stroke: '#fbbf24',
+            'stroke-width': '1.5',
+            class: 'pulse-ring'
+          });
+          const star = createSvgEl('polygon', {
+            points: '0,-8 2.3,-2.5 8,-2.5 3.4,1.2 5.1,7 0,3.5 -5.1,7 -3.4,1.2 -8,-2.5 -2.3,-2.5',
+            fill: poi.id === 'poi-landing' ? '#f59e0b' : '#38bdf8',
+            stroke: '#ffffff',
+            'stroke-width': '1.2'
+          });
+          g.appendChild(ring);
+          g.appendChild(star);
+        } else if (poi.category === 'planned') {
+          // Dashed target reticle for planned/approximate target
+          const targetCircle = createSvgEl('circle', {
+            r: '8',
+            fill: '#0284c7',
+            'fill-opacity': '0.35',
+            stroke: '#7dd3fc',
+            'stroke-width': '1.8',
+            'stroke-dasharray': '3 2'
+          });
+          const centerDot = createSvgEl('circle', {
+            r: '2.5',
+            fill: '#ffffff'
+          });
+          g.appendChild(targetCircle);
+          g.appendChild(centerDot);
+        } else if (poi.category === 'outcrop') {
+          // Rounded square outcrop marker
+          const sq = createSvgEl('rect', {
+            x: '-5.5',
+            y: '-5.5',
+            width: '11',
+            height: '11',
+            rx: '2.5',
+            fill: '#e11d48',
+            stroke: '#ffe4e6',
+            'stroke-width': '1.5'
+          });
+          g.appendChild(sq);
+        } else {
+          // Rover waypoint circle
+          const circ = createSvgEl('circle', {
+            r: '6',
+            fill: '#f97316',
+            stroke: '#ffffff',
+            'stroke-width': '1.5'
+          });
+          g.appendChild(circ);
+        }
+
+        g.addEventListener('mousemove', (e) => showTooltip(e, poi.name, `${poi.evidence} • ${poi.lat.toFixed(3)}°N, ${poi.lon.toFixed(3)}°E`));
+        g.addEventListener('mouseleave', hideTooltip);
+        g.addEventListener('click', (e) => {
+          if (state.dragMoved) return;
+          e.stopPropagation();
+          selectItem('poi', poi);
+        });
+
+        poisGroup.appendChild(g);
+      });
+
+      // 7. Geographic & Physiographic Map Typography
+      const mapLabels = [
+        { text: 'JEZERO CRATER', sub: 'Ø ~45 km • Paleolake Basin', x: 665, y: 495, size: 15, color: '#f8fafc', tracking: '3px' },
+        { text: 'NILI PLANUM', sub: 'Noachian Highlands & Olivine Plains', x: 175, y: 270, size: 14, color: '#cbd5e1', tracking: '2.5px' },
+        { text: 'NERETVA VALLIS', sub: 'Western Inlet Valley', x: 225, y: 382, size: 10.5, color: '#7dd3fc', tracking: '1.5px' },
+        { text: 'SAVA VALLIS', sub: 'Northern Inlet', x: 642, y: 112, size: 10, color: '#7dd3fc', tracking: '1.5px' },
+        { text: 'PLIVA VALLIS', sub: 'Eastern Outlet Breach', x: 1035, y: 422, size: 10.5, color: '#67e8f9', tracking: '1.5px' },
+        { text: 'WESTERN DELTA', sub: 'Unit HNlfd', x: 452, y: 515, size: 10, color: '#fde047', tracking: '1px' },
+        { text: 'NORTHERN FAN', sub: 'Eroded Remnant', x: 595, y: 294, size: 9.5, color: '#fde047', tracking: '1px' },
+        { text: 'PALEOLAKE SHORELINE (~ -2,395 m)', sub: '', x: 750, y: 256, size: 9, color: '#38bdf8', tracking: '1px' }
+      ];
+
+      mapLabels.forEach(lbl => {
+        const t = createSvgEl('text', {
+          x: lbl.x,
+          y: lbl.y,
+          'text-anchor': 'middle',
+          fill: lbl.color,
+          'font-family': 'Inter, sans-serif',
+          'font-size': lbl.size,
+          'font-weight': '700',
+          'letter-spacing': lbl.tracking,
+          stroke: '#090c12',
+          'stroke-width': '3',
+          'paint-order': 'stroke'
+        });
+        t.textContent = lbl.text;
+        labelsGroup.appendChild(t);
+
+        if (lbl.sub) {
+          const subT = createSvgEl('text', {
+            x: lbl.x,
+            y: lbl.y + 12,
+            'text-anchor': 'middle',
+            fill: '#94a3b8',
+            'font-family': 'JetBrains Mono, monospace',
+            'font-size': '8.5',
+            stroke: '#090c12',
+            'stroke-width': '2.5',
+            'paint-order': 'stroke'
+          });
+          subT.textContent = lbl.sub;
+          labelsGroup.appendChild(subT);
+        }
+      });
+
+      syncLayerVisibility();
+    }
+
+    function syncLayerVisibility() {
+      document.getElementById('geologyLayerGroup').style.display = state.layers.geology ? 'inline' : 'none';
+      document.getElementById('hydrologyLayerGroup').style.display = state.layers.hydrology ? 'inline' : 'none';
+      document.getElementById('zonesLayerGroup').style.display = state.layers.zones ? 'inline' : 'none';
+      document.getElementById('mineralsLayerGroup').style.display = state.layers.minerals ? 'inline' : 'none';
+      document.getElementById('poisLayerGroup').style.display = state.layers.pois ? 'inline' : 'none';
+      document.getElementById('traverseLayerGroup').style.display = state.layers.pois ? 'inline' : 'none';
+
+      // Update geologic unit opacity
+      document.querySelectorAll('#geologyLayerGroup > g').forEach(g => {
+        g.setAttribute('opacity', state.geoOpacity);
+      });
+    }
+
+    // ----------------------------------------------------------------------------
+    // 9. SIDEBAR LEGENDS, QUICK ZONES & INSPECTOR RENDERING
+    // ----------------------------------------------------------------------------
+    function populateLegendsAndQuickBars() {
+      // Left Sidebar USGS Geologic Unit Legend
+      const legendList = document.getElementById('unitLegendList');
+      legendList.innerHTML = '';
+      GEOLOGIC_UNITS.forEach(unit => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full flex items-center gap-2.5 p-2 rounded-lg bg-obsidian/50 hover:bg-slate-800/80 border border-slateborder/70 hover:border-slate-600 text-left transition';
+        btn.innerHTML = `
+          <span class="w-4 h-4 rounded shrink-0 border" style="background-color: ${unit.color}; border-color: ${unit.stroke};"></span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-xs font-mono font-bold text-white">${unit.code}</span>
+              <span class="text-[9px] text-slate-400 truncate">${unit.epoch.split('–')[0]}</span>
+            </div>
+            <div class="text-[11px] text-slate-300 truncate">${unit.name}</div>
+          </div>
+        `;
+        btn.addEventListener('click', () => {
+          selectItem('unit', unit);
+          if (window.innerWidth < 1024) {
+            document.getElementById('leftSidebar').classList.add('-translate-x-full');
+          }
+        });
+        legendList.appendChild(btn);
+      });
+
+      // Top Floating Quick Zone Pills
+      const quickBar = document.getElementById('quickZoneBar');
+      quickBar.innerHTML = '';
+      EXPLORATION_ZONES.forEach(zone => {
+        const pill = document.createElement('button');
+        pill.className = 'px-2 py-1 rounded-md bg-slatepanel/90 hover:bg-slate-800 border border-slateborder text-[10px] font-mono text-slate-200 flex items-center gap-1.5 shrink-0 shadow transition';
+        pill.innerHTML = `
+          <span class="w-2 h-2 rounded-full" style="background-color: ${zone.strokeColor}"></span>
+          <span class="font-bold">${zone.id}</span>
+          <span class="hidden xl:inline text-slate-400">${zone.name.split('(')[0].trim()}</span>
+        `;
+        pill.addEventListener('click', () => {
+          focusOnPoint(zone.center.x, zone.center.y, 1.85);
+          selectItem('zone', zone);
+        });
+        quickBar.appendChild(pill);
+      });
+    }
+
+    function getEvidenceBadgeHtml(label, type) {
+      const styles = {
+        confirmed: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40',
+        orbital: 'bg-teal-500/15 text-teal-300 border-teal-500/40',
+        interpretation: 'bg-sky-500/15 text-sky-300 border-sky-500/40',
+        planned: 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+      };
+      const cls = styles[type] || styles.confirmed;
+      return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border ${cls}">${label}</span>`;
+    }
+
+    function selectItem(type, data) {
+      state.selectedItem = { type, data };
+      const container = document.getElementById('inspectorContent');
+
+      // Highlight selected zone polygon if applicable
+      document.querySelectorAll('#zonesLayerGroup > g').forEach(g => {
+        const poly = g.querySelector('path');
+        const isMatch = type === 'zone' && g.getAttribute('data-zone-id') === data.id;
+        poly.setAttribute('fill-opacity', isMatch ? '0.26' : '0.08');
+        poly.setAttribute('stroke-width', isMatch ? '3' : '2');
+      });
+
+      if (type === 'zone') {
+        const ll = worldToLatLon(data.center.x, data.center.y);
+        container.innerHTML = `
+          <div class="space-y-4">
+            <div class="p-3.5 rounded-xl bg-obsidian border border-slateborder space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 font-mono text-xs font-bold">${data.id}</span>
+                ${getEvidenceBadgeHtml(data.evidenceBadge, data.badgeColor === 'amber' ? 'planned' : data.badgeColor === 'sky' || data.badgeColor === 'cyan' ? 'interpretation' : 'confirmed')}
+              </div>
+              <h2 class="text-base font-bold text-white leading-snug">${data.name}</h2>
+              <div class="text-xs font-mono text-sky-300">${data.classification}</div>
+              <div class="pt-1 flex items-center gap-3 text-[11px] font-mono text-slate-400">
+                <span>Center: ~${ll.lat.toFixed(2)}°N, ${ll.lon.toFixed(2)}°E</span>
+                <span>•</span>
+                <span>Unit: <strong class="text-slate-200">${data.unitCode}</strong></span>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Diagnostic Mineralogy</h3>
+              <p class="text-xs text-slate-200 bg-obsidian/70 p-3 rounded-lg border border-slateborder/80 leading-relaxed">
+                ${data.mineralogy}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Geological &amp; Mission Observations</h3>
+              <ul class="space-y-2 text-xs text-slate-300 bg-obsidian/70 p-3 rounded-lg border border-slateborder/80">
+                ${data.observations.map(obs => `
+                  <li class="flex items-start gap-2">
+                    <span class="text-sky-400 mt-0.5">▸</span>
+                    <span class="leading-relaxed">${obs}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+
+            <div class="space-y-1.5">
+              <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Astrobiological &amp; Stratigraphic Significance</h3>
+              <p class="text-xs text-slate-200 bg-sky-950/30 p-3 rounded-lg border border-sky-500/30 leading-relaxed">
+                ${data.significance}
+              </p>
+            </div>
+
+            <div class="pt-2 border-t border-slateborder flex items-center justify-between text-[11px] text-slate-400">
+              <span>Ref: ${data.source}</span>
+              <button onclick="focusOnPoint(${data.center.x}, ${data.center.y}, 1.85)" class="px-2.5 py-1 rounded bg-sky-600/20 hover:bg-sky-600/40 text-sky-300 font-mono text-[10px] border border-sky-500/30">
+                Center Zone
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (type === 'poi') {
+        const wPos = latLonToWorld(data.lat, data.lon);
+        const approxNote = data.evidenceType === 'planned'
+          ? `<div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200">Note: Coordinates for strategic/planned traverse targets are approximate based on NASA Mars 2020 campaign maps.</div>`
+          : '';
+        container.innerHTML = `
+          <div class="space-y-4">
+            <div class="p-3.5 rounded-xl bg-obsidian border border-slateborder space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400">${data.category === 'mineral' ? 'CRISM Spectral Target' : 'Mission / Field Target'}</span>
+                ${getEvidenceBadgeHtml(data.evidence, data.evidenceType)}
+              </div>
+              <h2 class="text-base font-bold text-white leading-snug">${data.name}</h2>
+              <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono text-sky-300">
+                <span>${data.lat.toFixed(4)}°N, ${data.lon.toFixed(4)}°E</span>
+                <span class="text-slate-500">|</span>
+                <span class="text-amber-300">${data.unit}</span>
+              </div>
+            </div>
+
+            ${approxNote}
+
+            <div class="space-y-1.5">
+              <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Field / Orbital Characterization</h3>
+              <p class="text-xs text-slate-200 bg-obsidian/70 p-3 rounded-lg border border-slateborder/80 leading-relaxed">
+                ${data.summary}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Identified Mineralogy</h3>
+              <p class="text-xs text-emerald-300 font-mono bg-obsidian/70 p-3 rounded-lg border border-slateborder/80 leading-relaxed">
+                ${data.mineralogy}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Scientific Significance</h3>
+              <p class="text-xs text-slate-200 bg-sky-950/30 p-3 rounded-lg border border-sky-500/30 leading-relaxed">
+                ${data.significance}
+              </p>
+            </div>
+
+            <div class="pt-2 border-t border-slateborder flex items-center justify-between text-[11px] text-slate-400">
+              <span>Ref: ${data.source}</span>
+              <button onclick="focusOnPoint(${wPos.x}, ${wPos.y}, 2.4)" class="px-2.5 py-1 rounded bg-sky-600/20 hover:bg-sky-600/40 text-sky-300 font-mono text-[10px] border border-sky-500/30">
+                Zoom to Target
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (type === 'unit') {
+        container.innerHTML = `
+          <div class="space-y-4">
+            <div class="p-3.5 rounded-xl bg-obsidian border border-slateborder space-y-2">
+              <div class="flex items-center gap-2.5">
+                <span class="w-5 h-5 rounded border" style="background-color: ${data.color}; border-color: ${data.stroke};"></span>
+                <span class="font-mono text-sm font-bold text-white">USGS Unit: ${data.code}</span>
+                <span class="ml-auto px-2 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-300">SIM 3464</span>
+              </div>
+              <h2 class="text-base font-bold text-white leading-snug">${data.name}</h2>
+              <div class="text-xs font-mono text-amber-300">${data.epoch}</div>
+            </div>
+
+            <div class="space-y-1.5">
+              <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Lithology &amp; Stratigraphy</h3>
+              <p class="text-xs text-slate-200 bg-obsidian/70 p-3 rounded-lg border border-slateborder/80 leading-relaxed">
+                ${data.lithology}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Characteristic Mineralogy</h3>
+              <p class="text-xs text-emerald-300 font-mono bg-obsidian/70 p-3 rounded-lg border border-slateborder/80 leading-relaxed">
+                ${data.minerals}
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Geological Significance</h3>
+              <p class="text-xs text-slate-200 bg-sky-950/30 p-3 rounded-lg border border-sky-500/30 leading-relaxed">
+                ${data.significance}
+              </p>
+            </div>
+
+            <div class="pt-2 border-t border-slateborder text-[11px] text-slate-400">
+              Reference: ${data.reference}
+            </div>
+          </div>
+        `;
+      }
+
+      // Open right drawer on mobile/tablet
+      if (window.innerWidth < 768) {
+        document.getElementById('rightSidebar').classList.remove('translate-x-full');
+      }
+    }
+
+    function renderDefaultInspector() {
+      const container = document.getElementById('inspectorContent');
+      container.innerHTML = `
+        <div class="space-y-4">
+          <div class="p-3.5 rounded-xl bg-gradient-to-br from-sky-950/50 to-obsidian border border-sky-500/30 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono uppercase tracking-wider text-sky-400">Regional Geologic Overview</span>
+              <span class="text-[10px] font-mono text-slate-400">18.38°N, 77.58°E</span>
+            </div>
+            <h2 class="text-base font-bold text-white">Jezero Crater Paleolake Basin &amp; Nili Planum</h2>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Jezero Crater (~45 km diameter) is an Early-to-Middle Noachian impact basin on the northwestern margin of Isidis Planitia. During the Late Noachian / Early Hesperian (~3.7 Ga), fluvial networks (<strong class="text-sky-300">Neretva</strong> and <strong class="text-sky-300">Sava Valles</strong>) breached the western and northern rims, impounding an open-basin paleolake that overflowed eastward through <strong class="text-cyan-300">Pliva Vallis</strong>.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="p-2.5 rounded-lg bg-obsidian border border-slateborder">
+              <div class="text-[10px] font-mono text-slate-400">Crater Diameter</div>
+              <div class="text-sm font-bold text-white mt-0.5">~45 km</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-obsidian border border-slateborder">
+              <div class="text-[10px] font-mono text-slate-400">Paleolake Spillway</div>
+              <div class="text-sm font-bold text-cyan-300 mt-0.5">~ -2,395 m</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-obsidian border border-slateborder">
+              <div class="text-[10px] font-mono text-slate-400">Primary Map</div>
+              <div class="text-sm font-bold text-amber-300 mt-0.5">USGS SIM 3464</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-obsidian border border-slateborder">
+              <div class="text-[10px] font-mono text-slate-400">Rover Mission</div>
+              <div class="text-sm font-bold text-emerald-300 mt-0.5">Perseverance</div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <h3 class="text-[11px] font-mono uppercase tracking-wider text-slate-400">Exploration Zones (Click to Inspect)</h3>
+            <div class="space-y-1.5">
+              ${EXPLORATION_ZONES.map(z => `
+                <button onclick="selectZoneById('${z.id}')" class="w-full p-2.5 rounded-lg bg-obsidian/70 hover:bg-slate-800/90 border border-slateborder hover:border-slate-600 text-left transition flex items-center justify-between gap-2">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded" style="background-color: ${z.strokeColor}22; color: ${z.strokeColor}">${z.id}</span>
+                      <span class="text-xs font-semibold text-white truncate">${z.name}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 truncate mt-0.5">${z.classification}</div>
+                  </div>
+                  <span class="text-slate-500 text-xs">→</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="p-3 rounded-lg bg-obsidian/60 border border-slateborder/80 text-[11px] text-slate-400 leading-relaxed">
+            <strong class="text-slate-300">Interactive Guide:</strong> Drag to pan, scroll or use <code class="text-sky-300">+ / −</code> to zoom, and click any geological polygon, exploration zone (<code class="text-amber-300">JZ-01</code>–<code class="text-amber-300">JZ-06</code>), CRISM mineral indicator, or Perseverance target for detailed geological data.
+          </div>
+        </div>
+      `;
+    }
+
+    window.selectZoneById = function(id) {
+      const z = EXPLORATION_ZONES.find(item => item.id === id);
+      if (z) {
+        focusOnPoint(z.center.x, z.center.y, 1.85);
+        selectItem('zone', z);
+      }
+    };
+
+    // ----------------------------------------------------------------------------
+    // 10. PAN, ZOOM & VIEWPORT NAVIGATION
+    // ----------------------------------------------------------------------------
+    function fitInitialView() {
+      const rect = mapViewport.getBoundingClientRect();
+      const scaleX = rect.width / WORLD_W;
+      const scaleY = rect.height / WORLD_H;
+      state.zoom = Math.max(0.65, Math.min(scaleX, scaleY) * 0.98);
+      state.panX = (rect.width - WORLD_W * state.zoom) / 2;
+      state.panY = (rect.height - WORLD_H * state.zoom) / 2;
+      renderMap();
+    }
+
+    window.focusOnPoint = function(wx, wy, targetZoom = 2.0) {
+      const rect = mapViewport.getBoundingClientRect();
+      state.zoom = Math.max(0.6, Math.min(5.0, targetZoom));
+      state.panX = rect.width / 2 - wx * state.zoom;
+      state.panY = rect.height / 2 - wy * state.zoom;
+      renderMap();
+    };
+
+    function zoomAt(clientX, clientY, factor) {
+      const rect = mapViewport.getBoundingClientRect();
+      const mouseX = clientX - rect.left;
+      const mouseY = clientY - rect.top;
+
+      const worldX = (mouseX - state.panX) / state.zoom;
+      const worldY = (mouseY - state.panY) / state.zoom;
+
+      const newZoom = Math.max(0.55, Math.min(6.0, state.zoom * factor));
+      state.panX = mouseX - worldX * newZoom;
+      state.panY = mouseY - worldY * newZoom;
+      state.zoom = newZoom;
+      renderMap();
+    }
+
+    // Mouse & Touch Pan/Zoom Handlers
+    mapSvg.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.16 : 0.86;
+      zoomAt(e.clientX, e.clientY, factor);
+    }, { passive: false });
+
+    mapSvg.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      state.isDragging = true;
+      state.dragMoved = false;
+      state.dragStartX = e.clientX - state.panX;
+      state.dragStartY = e.clientY - state.panY;
+      mapSvg.classList.remove('map-cursor-grab');
+      mapSvg.classList.add('map-cursor-grabbing');
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      // Update real-time coordinate readout when hovering over viewport
+      const rect = mapViewport.getBoundingClientRect();
+      if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        const wx = (e.clientX - rect.left - state.panX) / state.zoom;
+        const wy = (e.clientY - rect.top - state.panY) / state.zoom;
+        const clampedX = Math.max(0, Math.min(WORLD_W - 1, Math.round(wx)));
+        const clampedY = Math.max(0, Math.min(WORLD_H - 1, Math.round(wy)));
+        const ll = worldToLatLon(wx, wy);
+        const elev = Math.round(getElevationAt(clampedX, clampedY));
+
+        document.getElementById('coordReadout').textContent = `${ll.lat.toFixed(3)}°N, ${ll.lon.toFixed(3)}°E`;
+        document.getElementById('elevReadout').textContent = `${elev.toLocaleString()} m`;
+
+        // Approximate unit readout based on radial distance
+        const distCenter = Math.hypot(wx - 650, wy - 455);
+        const distDelta = Math.hypot(wx - 455, wy - 432);
+        let unitHint = 'Nnp2 (Nili Planum)';
+        if (distDelta < 58) unitHint = 'HNlfd (Western Delta)';
+        else if (distCenter < 245) unitHint = 'HNf (Crater Floor)';
+        else if (distCenter < 285 && wx < 560) unitHint = 'HNm (Marginal Carb.)';
+        else if (distCenter < 355) unitHint = 'Nnb (Crater Rim/Wall)';
+        document.getElementById('hoverUnitReadout').textContent = unitHint;
+      }
+
+      if (!state.isDragging) return;
+      const newPanX = e.clientX - state.dragStartX;
+      const newPanY = e.clientY - state.dragStartY;
+      if (Math.hypot(newPanX - state.panX, newPanY - state.panY) > 3) {
+        state.dragMoved = true;
+      }
+      state.panX = newPanX;
+      state.panY = newPanY;
+      renderMap();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (state.isDragging) {
+        state.isDragging = false;
+        mapSvg.classList.remove('map-cursor-grabbing');
+        mapSvg.classList.add('map-cursor-grab');
+      }
+    });
+
+    // Touch pan & pinch-zoom support
+    let lastTouchDist = null;
+    mapSvg.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        state.isDragging = true;
+        state.dragMoved = false;
+        state.dragStartX = e.touches[0].clientX - state.panX;
+        state.dragStartY = e.touches[0].clientY - state.panY;
+      } else if (e.touches.length === 2) {
+        lastTouchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    }, { passive: true });
+
+    mapSvg.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1 && state.isDragging) {
+        state.dragMoved = true;
+        state.panX = e.touches[0].clientX - state.dragStartX;
+        state.panY = e.touches[0].clientY - state.dragStartY;
+        renderMap();
+      } else if (e.touches.length === 2 && lastTouchDist) {
+        e.preventDefault();
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        zoomAt(midX, midY, dist / lastTouchDist);
+        lastTouchDist = dist;
+      }
+    }, { passive: false });
+
+    mapSvg.addEventListener('touchend', () => {
+      state.isDragging = false;
+      lastTouchDist = null;
+    });
+
+    // Clicking empty map canvas resets inspector to regional overview
+    mapSvg.addEventListener('click', () => {
+      if (state.dragMoved) return;
+      state.selectedItem = null;
+      document.querySelectorAll('#zonesLayerGroup > g path').forEach(p => {
+        p.setAttribute('fill-opacity', '0.08');
+        p.setAttribute('stroke-width', '2');
+      });
+      renderDefaultInspector();
+    });
+
+    // ----------------------------------------------------------------------------
+    // 11. TOOLTIP & SEARCH / FILTER FUNCTIONALITY
+    // ----------------------------------------------------------------------------
+    function showTooltip(e, title, sub) {
+      const tip = document.getElementById('mapTooltip');
+      document.getElementById('tooltipTitle').textContent = title;
+      document.getElementById('tooltipSub').textContent = sub;
+      tip.style.left = `${Math.min(window.innerWidth - 260, e.clientX + 14)}px`;
+      tip.style.top = `${Math.min(window.innerHeight - 70, e.clientY + 14)}px`;
+      tip.classList.remove('hidden');
+    }
+
+    function hideTooltip() {
+      document.getElementById('mapTooltip').classList.add('hidden');
+    }
+
+    function setupSearch() {
+      const input = document.getElementById('searchInput');
+      const resultsBox = document.getElementById('searchResults');
+      const clearBtn = document.getElementById('clearSearchBtn');
+
+      // Build searchable index
+      const searchIndex = [
+        ...EXPLORATION_ZONES.map(z => ({
+          type: 'zone',
+          title: `${z.id}: ${z.name}`,
+          subtitle: z.classification,
+          keywords: `${z.id} ${z.name} ${z.mineralogy} ${z.unitCode}`.toLowerCase(),
+          data: z,
+          focus: () => focusOnPoint(z.center.x, z.center.y, 1.85)
+        })),
+        ...POIS.map(p => {
+          const pos = latLonToWorld(p.lat, p.lon);
+          return {
+            type: 'poi',
+            title: p.name,
+            subtitle: `${p.evidence} • ${p.unit}`,
+            keywords: `${p.name} ${p.mineralogy} ${p.unit} ${p.evidence}`.toLowerCase(),
+            data: p,
+            focus: () => focusOnPoint(pos.x, pos.y, 2.35)
+          };
+        }),
+        ...GEOLOGIC_UNITS.map(u => ({
+          type: 'unit',
+          title: `${u.code} — ${u.name}`,
+          subtitle: `USGS SIM 3464 • ${u.epoch}`,
+          keywords: `${u.code} ${u.name} ${u.minerals} ${u.epoch}`.toLowerCase(),
+          data: u,
+          focus: () => fitInitialView()
+        }))
+      ];
+
+      input.addEventListener('input', () => {
+        const q = input.value.trim().toLowerCase();
+        clearBtn.classList.toggle('hidden', q.length === 0);
+        if (!q) {
+          resultsBox.classList.add('hidden');
+          return;
+        }
+
+        const matches = searchIndex.filter(item => item.keywords.includes(q)).slice(0, 10);
+        if (matches.length === 0) {
+          resultsBox.innerHTML = `<div class="p-3 text-xs text-slate-400">No matching zones, units, or targets found.</div>`;
+        } else {
+          resultsBox.innerHTML = matches.map((m, idx) => `
+            <button data-idx="${idx}" class="w-full px-3 py-2 text-left hover:bg-slate-800/90 transition flex flex-col">
+              <span class="text-xs font-semibold text-white truncate">${m.title}</span>
+              <span class="text-[10px] font-mono text-sky-300 truncate">${m.subtitle}</span>
+            </button>
+          `).join('');
+
+          resultsBox.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const item = matches[Number(btn.getAttribute('data-idx'))];
+              item.focus();
+              selectItem(item.type, item.data);
+              resultsBox.classList.add('hidden');
+            });
+          });
+        }
+        resultsBox.classList.remove('hidden');
+      });
+
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.classList.add('hidden');
+        resultsBox.classList.add('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !resultsBox.contains(e.target)) {
+          resultsBox.classList.add('hidden');
+        }
+      });
+    }
+
+    // ----------------------------------------------------------------------------
+    // 12. UI EVENT BINDINGS & INITIALIZATION
+    // ----------------------------------------------------------------------------
+    function bindControls() {
+      // Navigation buttons
+      document.getElementById('zoomInBtn').addEventListener('click', () => {
+        const rect = mapViewport.getBoundingClientRect();
+        zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1.3);
+      });
+      document.getElementById('zoomOutBtn').addEventListener('click', () => {
+        const rect = mapViewport.getBoundingClientRect();
+        zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 0.77);
+      });
+      document.getElementById('resetViewBtn').addEventListener('click', fitInitialView);
+      document.getElementById('zoomDeltaBtn').addEventListener('click', () => {
+        // Focus on Western Delta & Perseverance Traverse
+        focusOnPoint(480, 425, 2.35);
+      });
+
+      // Layer checkboxes
+      const layerMap = {
+        layerTerrain: 'terrain',
+        layerGeology: 'geology',
+        layerHydrology: 'hydrology',
+        layerZones: 'zones',
+        layerMinerals: 'minerals',
+        layerPOIs: 'pois'
+      };
+      for (const [elId, key] of Object.entries(layerMap)) {
+        document.getElementById(elId).addEventListener('change', (e) => {
+          state.layers[key] = e.target.checked;
+          syncLayerVisibility();
+          renderMap();
+        });
+      }
+
+      // Geologic polygon opacity slider
+      const opacitySlider = document.getElementById('geoOpacitySlider');
+      opacitySlider.addEventListener('input', (e) => {
+        const val = Number(e.target.value);
+        state.geoOpacity = val / 100;
+        document.getElementById('geoOpacityVal').textContent = `${val}%`;
+        syncLayerVisibility();
+      });
+
+      // Responsive Drawer Toggles
+      document.getElementById('toggleLayersBtn').addEventListener('click', () => {
+        document.getElementById('leftSidebar').classList.toggle('-translate-x-full');
+      });
+      document.getElementById('closeLeftSidebar').addEventListener('click', () => {
+        document.getElementById('leftSidebar').classList.add('-translate-x-full');
+      });
+      document.getElementById('toggleInfoBtn').addEventListener('click', () => {
+        document.getElementById('rightSidebar').classList.toggle('translate-x-full');
+      });
+      document.getElementById('closeRightSidebar').addEventListener('click', () => {
+        document.getElementById('rightSidebar').classList.add('translate-x-full');
+      });
+
+      window.addEventListener('resize', resizeCanvas);
+    }
+
+    window.onload = function () {
+      generateHillshadeBuffer();
+      buildSvgLayers();
+      populateLegendsAndQuickBars();
+      renderDefaultInspector();
+      setupSearch();
+      bindControls();
+      resizeCanvas();
+      fitInitialView();
+    };
+  </script>
+</body>
+</html>

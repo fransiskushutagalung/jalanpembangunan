@@ -1,4 +1,5 @@
 import { MARS_MAPS, getMapById } from '../maps/mapRegistry.js';
+import { ICONS } from './icons.js';
 
 export class MapPortal {
   constructor(options = {}) {
@@ -32,7 +33,7 @@ export class MapPortal {
       <div class="portal-landing">
         <!-- Header -->
         <div class="portal-brand">
-          <div class="brand-icon">🪐</div>
+          <div class="brand-icon" style="color:var(--data-cyan);">${ICONS.planet(46)}</div>
           <h1 class="brand-title">Mars Geological Maps</h1>
           <p class="brand-sub">Pilih peta geologi untuk memulai eksplorasi 3D</p>
         </div>
@@ -73,7 +74,7 @@ export class MapPortal {
     return `
       <div class="map-card ${hasSimulation ? 'active-map' : 'locked-map'}" data-map-id="${map.id}">
         ${hasSimulation 
-          ? '<div class="card-top-badge ready-badge">🚀 3D READY</div>' 
+          ? `<div class="card-top-badge ready-badge" style="display:inline-flex;align-items:center;gap:4px;">${ICONS.satellite(11)} <span>3D READY</span></div>` 
           : '<div class="card-top-badge coming-badge">COMING SOON</div>'
         }
         <div class="card-code">${map.code}</div>

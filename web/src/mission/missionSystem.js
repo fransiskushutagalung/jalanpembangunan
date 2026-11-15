@@ -94,7 +94,7 @@ export const REGION_SCIENCE_DATA = {
   hesperia: {
     id: 'hesperia',
     name: 'Hesperia Planum',
-    stateOfMatter: 'liquid', // Benda Cair -> Diambil dengan SEROK (Liquid Scoop)
+    stateOfMatter: 'liquid',
     artifactName: 'Fluida Geotermal Celah Pematang (Liquid Geothermal Brine)',
     rockType: 'Kolam Fluida Mineral Geotermal Celah Tektonik',
     mineral: 'Fluida Kaya Besi, Sulfida & Zeolit Terlarut',
@@ -103,6 +103,100 @@ export const REGION_SCIENCE_DATA = {
     offsetY: -10000,
     significance: 'Penanda sirkulasi fluida geotermal pasca-kompresi tektonik global.',
     analysisResult: 'Komposisi: 62% Larutan Besi-Sulfat, 22% Zeolit Koloid, 16% Senyawa Karbonat. Sumber geotermal aktif!',
+  },
+};
+
+export const OLYMPUS_SCIENCE_DATA = {
+  zeus_patera: {
+    id: 'zeus_patera',
+    name: 'Zeus Patera',
+    stateOfMatter: 'solid',
+    artifactName: 'Breksia Sesar Graben (Graben Fault Breccia)',
+    rockType: 'Basalt Tholeiitik & Sesar Peregangan Kaldera',
+    mineral: 'Plagioklas Terdialas, Piroksen & Oksida Besi',
+    color: 0xffb74d,
+    offsetX: -2000,
+    offsetY: 4000,
+    significance: 'Bukti peregangan tektonik ekstensional lantai kaldera tertua di Olympus Mons.',
+    analysisResult: 'Komposisi: 58% Tholeiitic Basalt, 26% Plagioklas Terdialas, 16% Oksida Besi. Sesar graben berarah Barat Laut-Tenggara terkonfirmasi!',
+  },
+  hera_patera: {
+    id: 'hera_patera',
+    name: 'Hera Patera',
+    stateOfMatter: 'solid',
+    artifactName: 'Fragmen Basal Busur Tebing (Arcuate Scarp Basalt)',
+    rockType: 'Dinding Sesar Runtuhan Kaldera Barat',
+    mineral: 'Piroksen Kalsik, Olivin Kuno & Ilmenit',
+    color: 0xff7043,
+    offsetX: -17500,
+    offsetY: 1500,
+    significance: 'Bukti episode keruntuhan bertahap dinding kaldera sisi barat sedalam 2,7 km.',
+    analysisResult: 'Komposisi: 64% Pyroxene, 22% Olivin Kuno, 14% Ilmenit. Jejak geseran sesar normal terverifikasi!',
+  },
+  hermes_patera: {
+    id: 'hermes_patera',
+    name: 'Hermes Patera',
+    stateOfMatter: 'solid',
+    artifactName: 'Pahoehoe Pematang Busur (Ridge Arch Crust)',
+    rockType: 'Kerak Lava Melengkung Deformasi Tektonik',
+    mineral: 'Basalt Kaca Vulkanik, Anorthite & Magnetit',
+    color: 0xab47bc,
+    offsetX: 4000,
+    offsetY: -6000,
+    significance: 'Struktur ridge arches dan wrinkle ridges akibat deformasi lava di bawah kerak beku.',
+    analysisResult: 'Komposisi: 48% Glassy Basalt, 34% Anorthite, 18% Vesikular Magnetit. Deformasi kompresi lava danau terbukti!',
+  },
+  dionysus_patera: {
+    id: 'dionysus_patera',
+    name: 'Dionysus Patera',
+    stateOfMatter: 'liquid',
+    artifactName: 'Kondensat Gas Fumarol (Fumarolic Sulfur Brine)',
+    rockType: 'Fluida Hidrotermal & Sublimat Belerang Vulkanik',
+    mineral: 'Larutan Belerang-Klorida & Sulfat Besi Terlarut',
+    color: 0x4fc3f7,
+    offsetX: -3500,
+    offsetY: -9000,
+    significance: 'Aktivitas sisa gas fumarol dasar cekungan Dionysus yang terhubung dengan Hermes.',
+    analysisResult: 'Komposisi: 68% Larutan Sulfur-Klorida, 20% Asam Sulfat Encer, 12% Silika Koloid. Sisa aktivitas volatil terdeteksi!',
+  },
+  athena_patera: {
+    id: 'athena_patera',
+    name: 'Athena Patera',
+    stateOfMatter: 'solid',
+    artifactName: 'Basal Pikrit Kaldera Bulat (Picritic Basalt)',
+    rockType: 'Lava Basaltik Primitif Kaldera Melingkar',
+    mineral: 'Forsteritik Olivin, Diopside & Kromit',
+    color: 0x66bb6a,
+    offsetX: 14500,
+    offsetY: 12500,
+    significance: 'Lava primer mantel dalam dari episode erupsi independen magma chamber timur laut.',
+    analysisResult: 'Komposisi: 54% Forsteritic Olivine, 32% Diopside, 14% Kromit. Magma primitif tanpa diferensiasi lanjut!',
+  },
+  apollo_patera: {
+    id: 'apollo_patera',
+    name: 'Apollo Patera',
+    stateOfMatter: 'solid',
+    artifactName: 'Vitrofir Danau Lava Apollo (Chilled Vitrophyre)',
+    rockType: 'Kaca Vulkanik Pembekuan Super-Cepat',
+    mineral: 'Silikat Amorf Kaca, Mikrokristalin Feldspar',
+    color: 0xef5350,
+    offsetX: -14000,
+    offsetY: -12500,
+    significance: 'Batuan kaca vulkanik sebelum permukaan tertimbun selimut lontaran Pangboche.',
+    analysisResult: 'Komposisi: 72% Amorphous Silicate Glass, 18% Mikrokristalin Feldspar, 10% Oksida Besi. Laju pendinginan ekstrem!',
+  },
+  pangboche_crater: {
+    id: 'pangboche_crater',
+    name: 'Pangboche Crater',
+    stateOfMatter: 'solid',
+    artifactName: 'Kaca Impak Ejecta Pangboche (Pangboche Impactite Glass)',
+    rockType: 'Ejecta Tumbukan Asteroid 10,4 km & Shocked Mineral',
+    mineral: 'Shocked Quartz, Plagioklas Terdialas, Nikel-Iridium',
+    color: 0xffffff,
+    offsetX: -9500,
+    offsetY: -11500,
+    significance: 'Material lontaran kawah tumbukan 10,4 km termuda yang menutupi lantai Apollo & Dionysus, membuktikan urutan umur relatif.',
+    analysisResult: 'Komposisi: 45% Shocked Quartz & Plagioclase, 38% Impact Melt Glass, 17% Nikel-Iridium Asteroid. Bukti tumbukan kosmik pasca-kaldera!',
   },
 };
 
@@ -130,7 +224,7 @@ export class MissionSystem {
     this.radarMesh = null;
     this._radarTime = 0;
 
-    // Koleksi Benda Unik 3D di Medan
+    this.activeMapId = 'usgs-i-1802-a';
     this.artifacts = [];
 
     // Statistik & Poin Sains
@@ -151,10 +245,45 @@ export class MissionSystem {
     // Notification callbacks
     this.onNotify = () => {};
     this.onStateChange = () => {};
-    this.onTaskComplete = () => {};  // Visual Perception callback
+    this.onTaskComplete = () => {};
 
     this.#initUniqueArtifacts();
     this.#initTransportRadar();
+  }
+
+  setMapMode(mapId) {
+    this.activeMapId = mapId;
+    for (const a of this.artifacts) {
+      if (a.mesh) this.scene.remove(a.mesh);
+    }
+    this.artifacts = [];
+    if (mapId === 'usgs-sim-3470') {
+      this.quests = [
+        { id: 'build_lab', title: 'Bangun Stasiun Lab Sains (GeoLab)', completed: false },
+        { id: 'radar_pickup', title: 'Radar Hermes Deteksi & Ambil Benda Unik', completed: false },
+        { id: 'deliver_lab', title: 'Hermes Kirim Kontainer ke Stasiun Lab', completed: false },
+        { id: 'zeus_sample', title: 'Riset Breksia Sesar Graben Zeus Patera', completed: false },
+        { id: 'pangboche_sample', title: 'Riset Kaca Impak Ejecta Kawah Pangboche', completed: false },
+        { id: 'dionysus_sample', title: 'Riset Fluida Belerang Fumarol Dionysus', completed: false },
+        { id: 'athena_sample', title: 'Riset Basal Pikrit Kaldera Bulat Athena', completed: false },
+      ];
+    } else {
+      this.quests = [
+        { id: 'build_lab', title: 'Bangun Stasiun Lab Sains (GeoLab)', completed: false },
+        { id: 'radar_pickup', title: 'Radar Hermes Deteksi & Ambil Benda Unik', completed: false },
+        { id: 'deliver_lab', title: 'Hermes Kirim Kontainer ke Stasiun Lab', completed: false },
+        { id: 'elysium_sample', title: 'Riset Kristal Magma Elysium', completed: false },
+        { id: 'acidalia_sample', title: 'Riset Es Hidrotermal Acidalia', completed: false },
+        { id: 'arabia_sample', title: 'Riset Meteorit Logam Arabia', completed: false },
+        { id: 'isidis_sample', title: 'Riset Kaca Tektite Isidis', completed: false },
+      ];
+    }
+    this.#initUniqueArtifacts();
+    this.onStateChange();
+  }
+
+  getScienceDataDict() {
+    return (this.activeMapId === 'usgs-sim-3470') ? OLYMPUS_SCIENCE_DATA : REGION_SCIENCE_DATA;
   }
 
   getElevation(X, Y) {
@@ -167,11 +296,12 @@ export class MissionSystem {
    * 1. MEMBUAT BENDA UNIK 3D DI SETIAP TITIK WILAYAH GEOLOGI
    * --------------------------------------------------------- */
   #initUniqueArtifacts() {
+    const dict = this.getScienceDataDict();
     const centerX = (this.hf.left + this.hf.left + this.hf.cols * this.hf.cell) / 2;
     const centerY = (this.hf.top + this.hf.top - this.hf.rows * this.hf.cell) / 2;
 
-    for (const key of Object.keys(REGION_SCIENCE_DATA)) {
-      const data = REGION_SCIENCE_DATA[key];
+    for (const key of Object.keys(dict)) {
+      const data = dict[key];
       const projX = Math.max(this.hf.minX + 800, Math.min(this.hf.maxX - 800, centerX + data.offsetX));
       const projY = Math.max(this.hf.minY + 800, Math.min(this.hf.maxY - 800, centerY + data.offsetY));
       const elev = this.getElevation(projX, projY);
@@ -199,7 +329,7 @@ export class MissionSystem {
       group.add(beam);
 
       // Label Billboard Melayang
-      const matterTag = data.stateOfMatter === 'solid' ? '💎 [PADAT]' : '🌊 [CAIR]';
+      const matterTag = data.stateOfMatter === 'solid' ? '[PADAT]' : '[CAIR]';
       const label = this.#createFloatingLabel(`${matterTag} ${data.artifactName}`, '#' + new THREE.Color(data.color).getHexString());
       label.position.y = 195;
       group.add(label);
@@ -313,6 +443,110 @@ export class MissionSystem {
         metalness: 0.85,
       });
       return new THREE.Mesh(geo, mat);
+    } else if (regionId === 'zeus_patera') {
+      // PADAT: Breksia Sesar Graben Zeus
+      const group = new THREE.Group();
+      const boxGeo = new THREE.BoxGeometry(16, 12, 14);
+      const boxMat = new THREE.MeshStandardMaterial({ color: 0x2b2416, roughness: 0.8, metalness: 0.3 });
+      group.add(new THREE.Mesh(boxGeo, boxMat));
+      const veinGeo = new THREE.BoxGeometry(16.4, 2.5, 4);
+      const veinMat = new THREE.MeshStandardMaterial({
+        color: 0xffaa00,
+        emissive: 0xff8800,
+        emissiveIntensity: 2.0,
+        metalness: 0.8,
+        roughness: 0.2,
+      });
+      group.add(new THREE.Mesh(veinGeo, veinMat));
+      return group;
+    } else if (regionId === 'hera_patera') {
+      // PADAT: Fragmen Basal Tebing Busur Hera
+      const geo = new THREE.CylinderGeometry(14, 18, 10, 6);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x3d2015,
+        emissive: 0xff5522,
+        emissiveIntensity: 1.2,
+        roughness: 0.5,
+        metalness: 0.6,
+      });
+      return new THREE.Mesh(geo, mat);
+    } else if (regionId === 'hermes_patera') {
+      // PADAT: Pahoehoe Pematang Busur Hermes
+      const geo = new THREE.TorusKnotGeometry(11, 3.2, 48, 8);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x3b1540,
+        emissive: 0xab47bc,
+        emissiveIntensity: 1.8,
+        roughness: 0.2,
+        metalness: 0.7,
+      });
+      return new THREE.Mesh(geo, mat);
+    } else if (regionId === 'dionysus_patera') {
+      // CAIR: Kondensat Gas Fumarol Dionysus
+      const group = new THREE.Group();
+      const basinMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8 });
+      const basin = new THREE.Mesh(new THREE.CylinderGeometry(18, 14, 6, 24), basinMat);
+      basin.position.y = -3;
+      group.add(basin);
+      const fluidMat = new THREE.MeshStandardMaterial({
+        color: 0x00e5ff,
+        emissive: 0x00aacc,
+        emissiveIntensity: 1.8,
+        roughness: 0.05,
+        metalness: 0.9,
+        transparent: true,
+        opacity: 0.88,
+      });
+      const fluid = new THREE.Mesh(new THREE.CylinderGeometry(16.5, 16.5, 1.2, 24), fluidMat);
+      fluid.position.y = 0.5;
+      group.add(fluid);
+      return group;
+    } else if (regionId === 'athena_patera') {
+      // PADAT: Basal Pikrit Kaldera Bulat Athena
+      const geo = new THREE.OctahedronGeometry(15, 1);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x0a3318,
+        emissive: 0x38ef7d,
+        emissiveIntensity: 2.2,
+        roughness: 0.15,
+        metalness: 0.85,
+      });
+      return new THREE.Mesh(geo, mat);
+    } else if (regionId === 'apollo_patera') {
+      // PADAT: Vitrofir Obsidian Danau Lava Apollo
+      const geo = new THREE.DodecahedronGeometry(14, 0);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x330509,
+        emissive: 0xef4444,
+        emissiveIntensity: 1.8,
+        roughness: 0.08,
+        metalness: 0.9,
+      });
+      return new THREE.Mesh(geo, mat);
+    } else if (regionId === 'pangboche_crater') {
+      // PADAT: Kaca Impak Ejecta Pangboche
+      const group = new THREE.Group();
+      const coreGeo = new THREE.IcosahedronGeometry(13, 0);
+      const coreMat = new THREE.MeshStandardMaterial({
+        color: 0x222630,
+        emissive: 0xffffff,
+        emissiveIntensity: 2.4,
+        roughness: 0.12,
+        metalness: 0.95,
+      });
+      group.add(new THREE.Mesh(coreGeo, coreMat));
+      const flangeGeo = new THREE.TorusGeometry(14, 2.2, 16, 32);
+      const flangeMat = new THREE.MeshStandardMaterial({
+        color: 0x556677,
+        emissive: 0x88ccff,
+        emissiveIntensity: 1.5,
+        roughness: 0.2,
+        metalness: 0.9,
+      });
+      const flange = new THREE.Mesh(flangeGeo, flangeMat);
+      flange.rotation.x = Math.PI / 3;
+      group.add(flange);
+      return group;
     } else {
       // CAIR: Kolam Fluida Geotermal Celah Pematang Hesperia
       const group = new THREE.Group();
@@ -867,7 +1101,7 @@ export class MissionSystem {
     physics.X += s * physics.speed * dt;
     physics.Y += c * physics.speed * dt;
     physics.elevation = this.getElevation(physics.X, physics.Y);
-    physics.status = `🚀 HYPER-DRIVE (${physics.speed.toFixed(0)} m/s)`;
+    physics.status = `RAPID TRANSIT (${physics.speed.toFixed(0)} m/s)`;
   }
 
   /* ---------------------------------------------------------
@@ -907,7 +1141,7 @@ export class MissionSystem {
       hooks.cargoSpecimen.visible = false;
     }
 
-    this.onNotify(`🔬 [ANALISIS LAB SELESAI] ${cargo.name} diteliti! ${cargo.analysisResult} (+350 Poin Sains)`);
+    this.onNotify(`[ANALISIS LAB SELESAI] ${cargo.name} diteliti! ${cargo.analysisResult} (+350 Poin Sains)`);
     this.onStateChange();
 
     setTimeout(() => {
@@ -921,7 +1155,7 @@ export class MissionSystem {
     if (q && !q.completed) {
       q.completed = true;
       this.researchScore += 150;
-      this.onNotify(`✓ TARGET TERCAPAI: ${q.title} (+150 Poin)`);
+      this.onNotify(`TARGET TERCAPAI: ${q.title} (+150 Poin)`);
       this.onStateChange();
     }
   }
@@ -932,7 +1166,7 @@ export class MissionSystem {
     canvas.height = 192;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = 'rgba(15, 10, 8, 0.90)';
+    ctx.fillStyle = 'rgba(7, 11, 18, 0.92)';
     const r = 24, w = 1024, h = 192;
     ctx.beginPath();
     ctx.moveTo(r, 0); ctx.lineTo(w - r, 0); ctx.quadraticCurveTo(w, 0, w, r);
@@ -942,11 +1176,11 @@ export class MissionSystem {
     ctx.fill();
 
     ctx.strokeStyle = colorHex;
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 4;
     ctx.stroke();
 
     ctx.fillStyle = colorHex;
-    ctx.font = 'bold 52px system-ui, sans-serif';
+    ctx.font = '700 48px "Plus Jakarta Sans", "Inter", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, w / 2, h / 2);

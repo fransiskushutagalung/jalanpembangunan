@@ -8,6 +8,8 @@
  *    region fast-travel, rover swarm telemetry).
  */
 
+import { ICONS } from './icons.js';
+
 export class Minimap {
   /**
    * @param {Object} options
@@ -864,16 +866,16 @@ export class Minimap {
     miniEl.innerHTML = `
       <div class="minimap-header">
         <div class="minimap-title-group">
-          <span class="minimap-badge">🛰️ MINIMAP TAKTIS</span>
+          <span class="minimap-badge" style="display:flex;align-items:center;gap:5px;">${ICONS.satellite(12)} MINIMAP TAKTIS</span>
           <span id="miniActiveRoverName" class="minimap-rover-tag">ROV-01</span>
         </div>
         <div class="minimap-controls">
-          <button id="miniLayerBtn" class="mini-icon-btn" title="Ganti Lapisan Peta (Orto / Topo / Lereng / Hybrid)">🛰️</button>
-          <button id="miniCenterBtn" class="mini-icon-btn" title="Pusatkan ke Rover">🎯</button>
-          <button id="miniZoomInBtn" class="mini-icon-btn" title="Perbesar (Zoom In)">+</button>
-          <button id="miniZoomOutBtn" class="mini-icon-btn" title="Perkecil (Zoom Out)">-</button>
-          <button id="miniMaximizeBtn" class="mini-icon-btn max-btn" title="Maksimalkan Peta (M)">⛶</button>
-          <button id="miniCollapseBtn" class="mini-icon-btn" title="Sembunyikan / Buka">−</button>
+          <button id="miniLayerBtn" class="mini-icon-btn" title="Ganti Lapisan Peta (Orto / Topo / Lereng / Hybrid)">${ICONS.layers(11)}</button>
+          <button id="miniCenterBtn" class="mini-icon-btn" title="Pusatkan ke Rover">${ICONS.crosshair(11)}</button>
+          <button id="miniZoomInBtn" class="mini-icon-btn" title="Perbesar (Zoom In)">${ICONS.plus(11)}</button>
+          <button id="miniZoomOutBtn" class="mini-icon-btn" title="Perkecil (Zoom Out)">${ICONS.minus(11)}</button>
+          <button id="miniMaximizeBtn" class="mini-icon-btn max-btn" title="Maksimalkan Peta (M)">${ICONS.maximize(11)}</button>
+          <button id="miniCollapseBtn" class="mini-icon-btn" title="Sembunyikan / Buka">${ICONS.minus(11)}</button>
         </div>
       </div>
       <div id="minimapBody" class="minimap-body">
@@ -905,10 +907,10 @@ export class Minimap {
 
         <div class="max-header-center">
           <div class="layer-pill-group">
-            <button class="layer-btn active" data-layer="ortho">🛰️ Citra Orto CTX</button>
-            <button class="layer-btn" data-layer="dem">🏔️ DEM Topografi</button>
-            <button class="layer-btn" data-layer="slope">📐 Kemiringan Lereng</button>
-            <button class="layer-btn" data-layer="hybrid">🌐 Orto + Kontur</button>
+            <button class="layer-btn active" data-layer="ortho">${ICONS.satellite(12)} Citra Orto CTX</button>
+            <button class="layer-btn" data-layer="dem">${ICONS.mountain(12)} DEM Topografi</button>
+            <button class="layer-btn" data-layer="slope">${ICONS.slope(12)} Kemiringan Lereng</button>
+            <button class="layer-btn" data-layer="hybrid">${ICONS.layers(12)} Orto + Kontur</button>
           </div>
           <label class="tint-toggle-label">
             <input type="checkbox" id="maxTintCheck" checked> Mars Tone
@@ -922,9 +924,9 @@ export class Minimap {
             <label><input type="checkbox" id="chkShowWaypoints" checked> Waypoint Misi</label>
             <label><input type="checkbox" id="chkShowGrid" checked> Grid Koordinat</label>
           </div>
-          <button id="maxMapFitBtn" class="max-action-btn" title="Lihat Seluruh Area Kawah Jezero (88×101 km)">🔍 Seluruh Peta</button>
-          <button id="maxMapCenterRoverBtn" class="max-action-btn" title="Pusatkan ke Rover Aktif">🎯 Pusatkan Rover</button>
-          <button id="maxMapCloseBtn" class="max-close-btn" title="Perkecil / Tutup Peta (M / Esc)">🗗 Perkecil (M)</button>
+          <button id="maxMapFitBtn" class="max-action-btn" title="Lihat Seluruh Area Kawah Jezero (88×101 km)">${ICONS.search(12)} Seluruh Peta</button>
+          <button id="maxMapCenterRoverBtn" class="max-action-btn" title="Pusatkan ke Rover Aktif">${ICONS.crosshair(12)} Pusatkan Rover</button>
+          <button id="maxMapCloseBtn" class="max-close-btn" title="Perkecil / Tutup Peta (M / Esc)">${ICONS.minimize(12)} Perkecil (M)</button>
         </div>
       </header>
 
@@ -943,9 +945,9 @@ export class Minimap {
 
           <!-- Floating Zoom Controls -->
           <div class="canvas-floating-controls">
-            <button id="maxZoomInBtn" class="float-btn" title="Zoom In">+</button>
-            <button id="maxZoomOutBtn" class="float-btn" title="Zoom Out">-</button>
-            <button id="maxZoomResetBtn" class="float-btn" title="Reset Zoom">↺</button>
+            <button id="maxZoomInBtn" class="float-btn" title="Zoom In">${ICONS.plus(13)}</button>
+            <button id="maxZoomOutBtn" class="float-btn" title="Zoom Out">${ICONS.minus(13)}</button>
+            <button id="maxZoomResetBtn" class="float-btn" title="Reset Zoom">${ICONS.rotateCcw(13)}</button>
           </div>
 
           <!-- Dynamic Scale Bar & North Indicator -->
@@ -961,9 +963,9 @@ export class Minimap {
           <!-- Click Target Action Pill -->
           <div id="mapTargetActionPill" class="target-action-pill" style="display:none;">
             <span id="targetPillTitle">Target: 77.45°E, 18.44°N</span>
-            <button id="targetSetWaypointBtn" class="pill-act-btn">📍 Tandai Waypoint</button>
-            <button id="targetTeleportCamBtn" class="pill-act-btn">🔭 Lihat di 3D</button>
-            <button id="targetClosePillBtn" class="pill-close-btn">✕</button>
+            <button id="targetSetWaypointBtn" class="pill-act-btn">${ICONS.pin(11)} Tandai Waypoint</button>
+            <button id="targetTeleportCamBtn" class="pill-act-btn">${ICONS.telescope(11)} Lihat di 3D</button>
+            <button id="targetClosePillBtn" class="pill-close-btn">${ICONS.x(11)}</button>
           </div>
         </div>
 
@@ -1006,15 +1008,15 @@ export class Minimap {
             <div class="side-card-title">OBJEK &amp; STASIUN MISI</div>
             <div id="sidebarMissionObjects" class="mission-objects-box">
               <div class="m-obj-item">
-                <span>📍 Sampel Geologi Terkini</span>
+                <span style="display:flex;align-items:center;gap:5px;">${ICONS.pin(11)} Sampel Geologi Terkini</span>
                 <span id="sideSampleStatus" style="color:#64748b">Belum Ada</span>
               </div>
               <div class="m-obj-item">
-                <span>🔬 Stasiun Lab Sains</span>
+                <span style="display:flex;align-items:center;gap:5px;">${ICONS.microscope(11)} Stasiun Lab Sains</span>
                 <span id="sideLabStatus" style="color:#64748b">Belum Dibangun</span>
               </div>
               <div class="m-obj-item">
-                <span>🚛 Status Kargo Hermes</span>
+                <span style="display:flex;align-items:center;gap:5px;">${ICONS.truck(11)} Status Kargo Hermes</span>
                 <span id="sideCargoStatus" style="color:#64748b">Kosong</span>
               </div>
             </div>
@@ -1199,7 +1201,7 @@ export class Minimap {
           { X: this.selectedTarget.X, Y: this.selectedTarget.Y },
           this.selectedTarget.regionId
         );
-        if (this.hud) this.hud.showToast(`📍 Waypoint Misi Ditetapkan pada ${this.selectedTarget.lon.toFixed(4)}°E, ${this.selectedTarget.lat.toFixed(4)}°N`);
+        if (this.hud) this.hud.showToast(`Waypoint Misi Ditetapkan pada ${this.selectedTarget.lon.toFixed(4)}°E, ${this.selectedTarget.lat.toFixed(4)}°N`);
         const p = $('mapTargetActionPill');
         if (p) p.style.display = 'none';
       }
@@ -1209,7 +1211,7 @@ export class Minimap {
         const w = this.frame.toWorld(this.selectedTarget.X, this.selectedTarget.Y, this.selectedTarget.elev);
         this.rig.controls.target.set(w.x, w.y, w.z);
         this.toggleMaximize(false);
-        if (this.hud) this.hud.showToast(`🔭 Kamera 3D Diarahkan ke Titik Pilihan`);
+        if (this.hud) this.hud.showToast(`Kamera 3D Diarahkan ke Titik Pilihan`);
       }
     });
 
@@ -1235,9 +1237,13 @@ export class Minimap {
     document.querySelectorAll('.layer-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.layer === layerName);
     });
-    const layerIcons = { ortho: '🛰️', dem: '🏔️', slope: '📐', hybrid: '🌐' };
     const miniBtn = document.getElementById('miniLayerBtn');
-    if (miniBtn) miniBtn.textContent = layerIcons[layerName] || '🛰️';
+    if (miniBtn) {
+      if (layerName === 'ortho') miniBtn.innerHTML = ICONS.satellite(11);
+      else if (layerName === 'dem') miniBtn.innerHTML = ICONS.mountain(11);
+      else if (layerName === 'slope') miniBtn.innerHTML = ICONS.slope(11);
+      else miniBtn.innerHTML = ICONS.layers(11);
+    }
   }
 
   toggleMaximize(forcedState = null) {
@@ -1247,7 +1253,7 @@ export class Minimap {
       modal.style.display = this.isMaximized ? 'flex' : 'none';
       if (this.isMaximized) {
         this.centerOnActiveRover();
-        if (this.hud) this.hud.showToast('🪐 Peta Taktis Kawah Jezero Dimaksimalkan');
+        if (this.hud) this.hud.showToast('Peta Taktis Kawah Jezero Dimaksimalkan');
       }
     }
   }
@@ -1744,7 +1750,7 @@ export class Minimap {
     ctx.strokeStyle = 'rgba(0, 229, 255, 0.12)';
     ctx.lineWidth = 1;
     ctx.fillStyle = '#64748b';
-    ctx.font = '9px monospace';
+    ctx.font = '500 9.5px "JetBrains Mono", monospace';
 
     const step = this.maxView.widthMeters > 30000 ? 10000 : (this.maxView.widthMeters > 8000 ? 5000 : 1000);
     const startX = Math.floor(minX / step) * step;
@@ -1793,7 +1799,7 @@ export class Minimap {
 
       // Label
       if (!isMini || this.miniRadius > 6000) {
-        ctx.font = isMini ? 'bold 8px monospace' : 'bold 10px monospace';
+        ctx.font = isMini ? '600 8.5px "Plus Jakarta Sans", "Inter", sans-serif' : '600 11px "Plus Jakarta Sans", "Inter", sans-serif';
         ctx.fillStyle = '#f1f5f9';
         ctx.textAlign = 'center';
         ctx.fillText(m.name, rx, ry - (isMini ? 8 : 12));
@@ -1869,10 +1875,10 @@ export class Minimap {
       ctx.arc(x, y, isMini ? 8 : 12, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.font = 'bold 9px monospace';
+      ctx.font = '700 9.5px "JetBrains Mono", monospace';
       ctx.fillStyle = '#ffd166';
       ctx.textAlign = 'center';
-      ctx.fillText('📍 SAMPEL', x, y - (isMini ? 8 : 12));
+      ctx.fillText('● SAMPEL', x, y - (isMini ? 8 : 12));
       ctx.restore();
     }
 
@@ -1885,10 +1891,10 @@ export class Minimap {
       ctx.save();
       ctx.fillStyle = '#a855f7';
       ctx.fillRect(x - (isMini ? 3 : 5), y - (isMini ? 3 : 5), isMini ? 6 : 10, isMini ? 6 : 10);
-      ctx.font = 'bold 9px monospace';
+      ctx.font = '700 9.5px "JetBrains Mono", monospace';
       ctx.fillStyle = '#d8b4fe';
       ctx.textAlign = 'center';
-      ctx.fillText('🔬 LAB', x, y - (isMini ? 7 : 10));
+      ctx.fillText('● LAB SAINS', x, y - (isMini ? 7 : 10));
       ctx.restore();
     }
   }
@@ -1965,7 +1971,7 @@ export class Minimap {
       ctx.restore();
 
       // Rover Label Pill
-      ctx.font = isActive ? 'bold 10px monospace' : '8.5px monospace';
+      ctx.font = isActive ? '700 10.5px "JetBrains Mono", monospace' : '600 9px "JetBrains Mono", monospace';
       ctx.fillStyle = isActive ? '#00e5ff' : '#cbd5e1';
       ctx.textAlign = 'center';
       const firstName = rov.name ? rov.name.split(' ')[0] : `ROV-0${i + 1}`;
@@ -2031,7 +2037,10 @@ export class Minimap {
             <span class="src-coords">${lon.toFixed(4)}°E, ${lat.toFixed(4)}°N · Elv: ${Math.round(p.elevation ?? 0)}m</span>
             <span style="font-size:8.5px;color:#64748b;">Spd: ${(p.speed ?? 0).toFixed(1)} m/s · Jarak: ${dist} m</span>
           </div>
-          <button class="src-btn focus-rover-btn" data-idx="${i}">Fokus 🎯</button>
+          <button class="src-btn focus-rover-btn" data-idx="${i}" style="display:inline-flex;align-items:center;gap:4px;">
+            <span>Fokus</span>
+            ${ICONS.crosshair(11)}
+          </button>
         </div>
       `;
     }).join('');
@@ -2050,7 +2059,7 @@ export class Minimap {
       const sSample = document.getElementById('sideSampleStatus');
       if (sSample) {
         if (this.missionSystem.activeWaypoint) {
-          sSample.textContent = '📍 Waypoint Ditetapkan';
+          sSample.innerHTML = `${ICONS.pin(11)} <span>Waypoint Ditetapkan</span>`;
           sSample.style.color = '#f59e0b';
         } else {
           sSample.textContent = 'Belum Ada';
@@ -2060,7 +2069,7 @@ export class Minimap {
       const sLab = document.getElementById('sideLabStatus');
       if (sLab) {
         if (this.missionSystem.labStation) {
-          sLab.textContent = '🔬 Aktif Beroperasi';
+          sLab.innerHTML = `${ICONS.microscope(11)} <span>Aktif Beroperasi</span>`;
           sLab.style.color = '#10b981';
         } else {
           sLab.textContent = 'Belum Dibangun';
@@ -2070,7 +2079,7 @@ export class Minimap {
       const sCargo = document.getElementById('sideCargoStatus');
       if (sCargo) {
         if (this.missionSystem.transportCargo) {
-          sCargo.textContent = '📦 Membawa Sampel';
+          sCargo.innerHTML = `${ICONS.package(11)} <span>Membawa Sampel</span>`;
           sCargo.style.color = '#00e5ff';
         } else {
           sCargo.textContent = 'Kosong';

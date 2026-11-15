@@ -45,6 +45,15 @@ export class MarsGlobe3D {
         rotY: 0.45,
         rotX: -0.22,
       },
+      'usgs-sim-3464': {
+        id: 'usgs-sim-3464',
+        lat: 18.44,
+        lon: 77.45,
+        name: 'Jezero Crater (Mars 2020)',
+        code: 'USGS SIM 3464',
+        rotY: -2.35, // Sesuaikan sudut putar bola Mars menghadap Jezero
+        rotX: -0.15,
+      },
     };
     this.activeHotspotId = 'usgs-i-1802-a';
     this.targetRotY = undefined;
@@ -286,7 +295,13 @@ export class MarsGlobe3D {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let imgData;
+    try {
+      imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    } catch (e) {
+      console.warn('[MarsGlobe3D] Could not read canvas image data for bump map (likely file:// or cross-origin):', e);
+      return null;
+    }
     const data = imgData.data;
 
     // Convert RGB to luminance and enhance subtle Martian craters / canyon scarps
@@ -560,9 +575,30 @@ export class MarsGlobe3D {
     };
 
     const onPointerMove = (e) => {
-      if (!this.isDragging) return;
       const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
       const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+
+      if (!this.isDragging) {
+        let hovering = false;
+        const rect = el.getBoundingClientRect();
+        const wp = new THREE.Vector3();
+        const cd = new THREE.Vector3();
+        for (const [id, group] of Object.entries(this.hotspotGroups)) {
+          group.getWorldPosition(wp);
+          cd.copy(this.camera.position).sub(wp).normalize();
+          if (wp.clone().normalize().dot(cd) > 0.05) {
+            const sp = wp.clone().project(this.camera);
+            const sx = (sp.x * 0.5 + 0.5) * rect.width + rect.left;
+            const sy = (-sp.y * 0.5 + 0.5) * rect.height + rect.top;
+            if (Math.hypot(clientX - sx, clientY - sy) < 32) {
+              hovering = true;
+              break;
+            }
+          }
+        }
+        el.style.cursor = hovering ? 'pointer' : 'grab';
+        return;
+      }
 
       const deltaX = clientX - this.prevPointerX;
       const deltaY = clientY - this.prevPointerY;
@@ -587,7 +623,7 @@ export class MarsGlobe3D {
       const pointer = e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e;
       if (
         this.isDragging &&
-        Math.hypot(pointer.clientX - this.pointerDownX, pointer.clientY - this.pointerDownY) <= 5
+        Math.hypot(pointer.clientX - this.pointerDownX, pointer.clientY - this.pointerDownY) <= 14
       ) {
         this.#pickHotspot(pointer.clientX, pointer.clientY);
       }
@@ -625,7 +661,28 @@ export class MarsGlobe3D {
   }
 
   #pickHotspot(clientX, clientY) {
+    if (!this.renderer || !this.camera) return;
     const rect = this.renderer.domElement.getBoundingClientRect();
+
+    // 1. Direct screen-space proximity picking
+    const wp = new THREE.Vector3();
+    const cd = new THREE.Vector3();
+    for (const [id, group] of Object.entries(this.hotspotGroups)) {
+      group.getWorldPosition(wp);
+      cd.copy(this.camera.position).sub(wp).normalize();
+      if (wp.clone().normalize().dot(cd) > 0.05) {
+        const sp = wp.clone().project(this.camera);
+        const sx = (sp.x * 0.5 + 0.5) * rect.width + rect.left;
+        const sy = (-sp.y * 0.5 + 0.5) * rect.height + rect.top;
+        if (Math.hypot(clientX - sx, clientY - sy) < 36) {
+          this.setActiveHotspot(id);
+          this.onHotspotClick(this.hotspots[id]);
+          return;
+        }
+      }
+    }
+
+    // 2. Fallback 3D raycasting
     const pointer = new THREE.Vector2(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       -((clientY - rect.top) / rect.height) * 2 + 1

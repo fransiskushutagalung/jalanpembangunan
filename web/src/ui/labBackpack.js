@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { REGION_SCIENCE_DATA } from '../mission/missionSystem.js';
+import { ICONS } from './icons.js';
 
 /**
  * LabBackpackWorkbench — Fasilitas Riset Meja Laboratorium & Backpack Spesimen Mars
@@ -24,7 +25,8 @@ export class LabBackpackWorkbench {
 
     this.isOpen = false;
     this.selectedSpecimenId = 'elysium'; // Default selected
-
+    this.customDataset = null; // Dataset khusus map aktif (mis. Jezero Crater)
+    
     // 3D Scene Meja Riset
     this.renderer = null;
     this.scene = null;
@@ -41,6 +43,26 @@ export class LabBackpackWorkbench {
     this.#init3DScene();
   }
 
+  /**
+   * Mengganti isi inventori & model 3D meja riset sesuai map aktif.
+   * Kirim null untuk kembali ke dataset bawaan map teman (REGION_SCIENCE_DATA).
+   */
+  setCustomDataset(datasetMap, defaultId = null) {
+    this.customDataset = datasetMap || null;
+    const activeMap = this.#getActiveDataset();
+    const keys = Object.keys(activeMap);
+    if (keys.length > 0) {
+      this.selectedSpecimenId = defaultId && activeMap[defaultId] ? defaultId : keys[0];
+    }
+    this.#refreshSidebarList();
+    if (this.isOpen && this.selectedSpecimenId) {
+      this.placeArtifactOnDesk(this.selectedSpecimenId);
+    }
+  }
+
+  #getActiveDataset() {
+    return this.customDataset || REGION_SCIENCE_DATA;
+  }
   /* ---------------------------------------------------------
    * 1. MEMBANGUN STRUKTUR DOM DI LAYAR
    * --------------------------------------------------------- */
@@ -56,9 +78,15 @@ export class LabBackpackWorkbench {
         <div class="lab-bp-header">
           <div class="lab-bp-title-box">
             <span class="lab-bp-badge">NASA / JPL SCIENCE STATION</span>
-            <h2 class="lab-bp-title">🎒 BACKPACK LABORATORIUM — MEJA RISET SPESIMEN MARS</h2>
+            <h2 class="lab-bp-title" style="display:flex;align-items:center;gap:8px;">
+              ${ICONS.backpack(16)}
+              <span>BACKPACK LABORATORIUM — MEJA RISET SPESIMEN MARS</span>
+            </h2>
           </div>
-          <button class="lab-bp-close-btn" id="labBpCloseBtn" title="Tutup Meja Riset">✕ TUTUP</button>
+          <button class="lab-bp-close-btn" id="labBpCloseBtn" title="Tutup Meja Riset" style="display:inline-flex;align-items:center;gap:6px;">
+            ${ICONS.x(12)}
+            <span>TUTUP</span>
+          </button>
         </div>
 
         <!-- Window Main Content -->
@@ -73,16 +101,22 @@ export class LabBackpackWorkbench {
               <!-- Item kartu spesimen dirender dinamis -->
             </div>
             <div class="lab-bp-sidebar-footer">
-              <small>💡 Klik salah satu item untuk meletakkannya di atas meja riset laboratorium</small>
+              <small>Klik salah satu item untuk meletakkannya di atas meja riset laboratorium</small>
             </div>
           </div>
 
           <!-- TENGAH: MEJA RISET 3D INTERAKTIF (EXAMINATION DESK) -->
           <div class="lab-bp-center">
             <div class="lab-bp-viewport-header">
-              <span id="labBpDeskLabel">🔬 MEJA RISET PEMERIKSAAN SPESIMEN 3D</span>
+              <span id="labBpDeskLabel" style="display:flex;align-items:center;gap:6px;">
+                ${ICONS.microscope(14)}
+                <span>MEJA RISET PEMERIKSAAN SPESIMEN 3D</span>
+              </span>
               <div class="lab-bp-view-tools">
-                <button id="labBpResetViewBtn" class="lab-bp-btn-sm" title="Kembalikan Sudut Pandang">↺ Reset View</button>
+                <button id="labBpResetViewBtn" class="lab-bp-btn-sm btn-with-icon" title="Kembalikan Sudut Pandang">
+                  ${ICONS.rotateCcw(11)}
+                  <span>Reset View</span>
+                </button>
                 <span class="lab-bp-drag-hint">Orbit 360° • Zoom • Pan</span>
               </div>
             </div>
@@ -101,22 +135,34 @@ export class LabBackpackWorkbench {
           <!-- SISI KANAN: DESKRIPSI LENGKAP & PERSEPSI VISUAL (DEPTH & SNAPSHOT) -->
           <div class="lab-bp-detail-panel">
             <div class="lab-bp-detail-header">
-              <span class="lab-bp-tag" id="labBpMatterTag">💎 BATUAN PADAT</span>
+              <span class="lab-bp-tag" id="labBpMatterTag" style="display:inline-flex;align-items:center;gap:4px;">
+                ${ICONS.gem(11)}
+                <span>BATUAN PADAT</span>
+              </span>
               <h3 class="lab-bp-item-name" id="labBpItemName">Kristal Inti Magma</h3>
               <div class="lab-bp-item-region" id="labBpItemRegion">Wilayah: Elysium Planitia</div>
             </div>
 
             <!-- Tab Pilihan: Analisis Geologi vs Persepsi Visual Depth -->
             <div class="lab-bp-detail-tabs">
-              <button class="lab-bp-tab-btn active" data-tab="analysis">🔬 ANALISIS LAB</button>
-              <button class="lab-bp-tab-btn" data-tab="perception">📷 PERSEPSI KAMERA &amp; DEPTH</button>
+              <button class="lab-bp-tab-btn active" data-tab="analysis" style="display:inline-flex;align-items:center;gap:6px;">
+                ${ICONS.microscope(13)}
+                <span>ANALISIS LAB</span>
+              </button>
+              <button class="lab-bp-tab-btn" data-tab="perception" style="display:inline-flex;align-items:center;gap:6px;">
+                ${ICONS.camera(13)}
+                <span>PERSEPSI KAMERA &amp; DEPTH</span>
+              </button>
             </div>
 
             <!-- TAB 1: HASIL ANALISIS SAINS -->
             <div class="lab-bp-tab-content active" id="labBpTabAnalysis">
               <div class="lab-bp-section">
                 <label>METODE PENGAMBILAN HERMES</label>
-                <div class="lab-bp-pickup-status" id="labBpPickupMethod">🦾 Dicapit menggunakan Hydraulic Claw Gripper</div>
+                <div class="lab-bp-pickup-status" id="labBpPickupMethod" style="display:flex;align-items:center;gap:6px;">
+                  ${ICONS.claw(13)}
+                  <span>Dicapit menggunakan Hydraulic Claw Gripper</span>
+                </div>
               </div>
 
               <div class="lab-bp-section">
@@ -149,7 +195,10 @@ export class LabBackpackWorkbench {
                   <div class="lab-bp-vis-frame">
                     <img id="labBpRgbImage" class="lab-bp-vis-img" alt="Kamera Depan Rover" style="display:none;">
                     <div id="labBpRgbFallback" class="lab-bp-vis-fallback">
-                      <span>📷 FRONT HAZCAM</span>
+                      <span style="display:flex;align-items:center;justify-content:center;gap:6px;">
+                        ${ICONS.camera(13)}
+                        <span>FRONT HAZCAM</span>
+                      </span>
                       <small>Snapshot medan terverifikasi</small>
                     </div>
                   </div>
@@ -161,7 +210,10 @@ export class LabBackpackWorkbench {
                   <div class="lab-bp-vis-frame">
                     <img id="labBpDepthImage" class="lab-bp-vis-img" alt="Depth Camera Map" style="display:none;">
                     <div id="labBpDepthFallback" class="lab-bp-vis-fallback">
-                      <span>📐 DEPTH MAP STEREO</span>
+                      <span style="display:flex;align-items:center;justify-content:center;gap:6px;">
+                        ${ICONS.slope(13)}
+                        <span>DEPTH MAP STEREO</span>
+                      </span>
                       <small>Turbo Color Ramp Sensor</small>
                     </div>
                   </div>
@@ -327,7 +379,8 @@ export class LabBackpackWorkbench {
       this.currentArtifactMesh = null;
     }
 
-    const data = REGION_SCIENCE_DATA[specimenId];
+    const dataset = this.#getActiveDataset();
+    const data = dataset[specimenId];
     if (!data) return;
 
     const group = new THREE.Group();
@@ -353,6 +406,94 @@ export class LabBackpackWorkbench {
   }
 
   #createSpecimen3D(id, data) {
+    // --- MODEL 3D KHUSUS SPESIMEN JEZERO CRATER ---
+    if (data && data.meshKind) {
+      const isResearched = !!data.researched;
+
+      // Sebelum diteliti Robot B: tampilkan kapsul sampel misterius bersegel
+      if (!isResearched) {
+        const mysteryGroup = new THREE.Group();
+        const capsule = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.24, 0.24, 0.48, 20),
+          new THREE.MeshStandardMaterial({
+            color: 0x1e293b,
+            emissive: 0x38bdf8,
+            emissiveIntensity: 0.35,
+            metalness: 0.85,
+            roughness: 0.25
+          })
+        );
+        const halo = new THREE.Mesh(
+          new THREE.TorusGeometry(0.32, 0.015, 10, 32),
+          new THREE.MeshBasicMaterial({ color: 0xf59e0b })
+        );
+        halo.rotation.x = Math.PI / 2;
+        mysteryGroup.add(capsule, halo);
+        return mysteryGroup;
+      }
+
+      // Setelah diteliti Robot B: tampilkan model 3D geologi asli yang tajam & jelas
+      if (data.meshKind === 'olivine_crystal') {
+        const g = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x65a30d,
+          emissive: 0x84cc16,
+          emissiveIntensity: 1.4,
+          roughness: 0.15,
+          metalness: 0.75
+        });
+        [
+          { r: 0.2, h: 0.62, x: 0, z: 0, rx: 0.08, rz: -0.05 },
+          { r: 0.13, h: 0.44, x: 0.2, z: 0.1, rx: 0.3, rz: -0.22 },
+          { r: 0.12, h: 0.4, x: -0.18, z: 0.12, rx: -0.25, rz: 0.2 }
+        ].forEach(s => {
+          const m = new THREE.Mesh(new THREE.ConeGeometry(s.r, s.h, 6), mat);
+          m.position.set(s.x, s.h * 0.35 - 0.18, s.z);
+          m.rotation.set(s.rx, 0.4, s.rz);
+          g.add(m);
+        });
+        return g;
+      }
+
+      if (data.meshKind === 'layered_butte' || data.meshKind === 'carbonate_terrace') {
+        const g = new THREE.Group();
+        const cols =
+          data.meshKind === 'carbonate_terrace'
+            ? [0xd6d3d1, 0xf5f5f4, 0xffffff]
+            : [0x9a3412, 0xd97706, 0xfacc15];
+        cols.forEach((col, i) => {
+          const slab = new THREE.Mesh(
+            new THREE.BoxGeometry(0.65 - i * 0.13, 0.12, 0.5 - i * 0.1),
+            new THREE.MeshStandardMaterial({ color: col, roughness: 0.45, metalness: 0.2 })
+          );
+          slab.position.set(i * 0.03, -0.16 + i * 0.12, -i * 0.02);
+          slab.rotation.y = 0.35;
+          g.add(slab);
+        });
+        return g;
+      }
+
+      // Default batuan berurat mineral / megabreksi Jezero
+      const rockGroup = new THREE.Group();
+      const rock = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.34, 1),
+        new THREE.MeshStandardMaterial({
+          color: 0x475569,
+          emissive: data.color || 0x00e5ff,
+          emissiveIntensity: 0.55,
+          roughness: 0.35,
+          metalness: 0.6
+        })
+      );
+      const vein = new THREE.Mesh(
+        new THREE.TorusGeometry(0.33, 0.02, 10, 32),
+        new THREE.MeshBasicMaterial({ color: data.color || 0x38bdf8 })
+      );
+      vein.rotation.set(0.6, 0.3, 0);
+      rockGroup.add(rock, vein);
+      return rockGroup;
+    }
+
     if (id === 'elysium') {
       // BATUAN MAGMA MENONJOL: Kristal Obsidian Berurat Lava Pijar
       const group = new THREE.Group();
@@ -435,6 +576,109 @@ export class LabBackpackWorkbench {
         metalness: 0.85,
       });
       return new THREE.Mesh(geo, mat);
+    } else if (id === 'zeus_patera') {
+      // PADAT: Breksia Sesar Graben Zeus
+      const group = new THREE.Group();
+      const boxGeo = new THREE.BoxGeometry(0.38, 0.28, 0.32);
+      const boxMat = new THREE.MeshStandardMaterial({ color: 0x2b2416, roughness: 0.8, metalness: 0.3 });
+      group.add(new THREE.Mesh(boxGeo, boxMat));
+      const veinGeo = new THREE.BoxGeometry(0.39, 0.06, 0.1);
+      const veinMat = new THREE.MeshStandardMaterial({
+        color: 0xffaa00,
+        emissive: 0xff8800,
+        emissiveIntensity: 2.2,
+        metalness: 0.85,
+        roughness: 0.15,
+      });
+      group.add(new THREE.Mesh(veinGeo, veinMat));
+      return group;
+    } else if (id === 'hera_patera') {
+      // PADAT: Fragmen Basal Tebing Busur Hera
+      const geo = new THREE.CylinderGeometry(0.32, 0.42, 0.22, 6);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x331c12,
+        emissive: 0xff5522,
+        emissiveIntensity: 1.4,
+        roughness: 0.5,
+        metalness: 0.6,
+      });
+      return new THREE.Mesh(geo, mat);
+    } else if (id === 'hermes_patera') {
+      // PADAT: Pahoehoe Pematang Busur Hermes
+      const geo = new THREE.TorusKnotGeometry(0.26, 0.075, 48, 8);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x35103b,
+        emissive: 0xab47bc,
+        emissiveIntensity: 1.8,
+        roughness: 0.2,
+        metalness: 0.75,
+      });
+      return new THREE.Mesh(geo, mat);
+    } else if (id === 'dionysus_patera') {
+      // CAIR: Bejana Fumarol Gas & Belerang Dionysus
+      const group = new THREE.Group();
+      const beakerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.35 });
+      const beaker = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.3, 0.45, 24), beakerMat);
+      group.add(beaker);
+      const fluidMat = new THREE.MeshStandardMaterial({
+        color: 0x00e5ff,
+        emissive: 0x00aacc,
+        emissiveIntensity: 1.8,
+        roughness: 0.08,
+        metalness: 0.8,
+        transparent: true,
+        opacity: 0.85,
+      });
+      const fluid = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.28, 0.38, 24), fluidMat);
+      fluid.position.y = -0.02;
+      group.add(fluid);
+      return group;
+    } else if (id === 'athena_patera') {
+      // PADAT: Basal Pikrit Kaldera Bulat Athena
+      const geo = new THREE.OctahedronGeometry(0.36, 1);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x082b14,
+        emissive: 0x38ef7d,
+        emissiveIntensity: 2.2,
+        roughness: 0.12,
+        metalness: 0.85,
+      });
+      return new THREE.Mesh(geo, mat);
+    } else if (id === 'apollo_patera') {
+      // PADAT: Vitrofir Danau Lava Apollo
+      const geo = new THREE.DodecahedronGeometry(0.34, 0);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x260307,
+        emissive: 0xef4444,
+        emissiveIntensity: 1.8,
+        roughness: 0.08,
+        metalness: 0.9,
+      });
+      return new THREE.Mesh(geo, mat);
+    } else if (id === 'pangboche_crater') {
+      // PADAT: Kaca Impak Ejecta Pangboche
+      const group = new THREE.Group();
+      const coreGeo = new THREE.IcosahedronGeometry(0.3, 0);
+      const coreMat = new THREE.MeshStandardMaterial({
+        color: 0x222630,
+        emissive: 0xffffff,
+        emissiveIntensity: 2.4,
+        roughness: 0.12,
+        metalness: 0.95,
+      });
+      group.add(new THREE.Mesh(coreGeo, coreMat));
+      const flangeGeo = new THREE.TorusGeometry(0.34, 0.05, 16, 32);
+      const flangeMat = new THREE.MeshStandardMaterial({
+        color: 0x556677,
+        emissive: 0x88ccff,
+        emissiveIntensity: 1.5,
+        roughness: 0.2,
+        metalness: 0.9,
+      });
+      const flange = new THREE.Mesh(flangeGeo, flangeMat);
+      flange.rotation.x = Math.PI / 3;
+      group.add(flange);
+      return group;
     } else {
       // MONOLIT FLUIDA GEOTERMAL HESPERIA
       const group = new THREE.Group();
@@ -467,7 +711,9 @@ export class LabBackpackWorkbench {
     // Badge Wujud Materi
     const matterTag = document.getElementById('labBpMatterTag');
     if (matterTag) {
-      matterTag.textContent = isSolid ? '💎 BATUAN PADAT' : '🌊 FLUIDA CAIR';
+      matterTag.innerHTML = isSolid
+        ? `<span style="display:inline-flex;align-items:center;gap:4px;">${ICONS.gem(11)} <span>BATUAN PADAT</span></span>`
+        : `<span style="display:inline-flex;align-items:center;gap:4px;">${ICONS.layers(11)} <span>FLUIDA CAIR</span></span>`;
       matterTag.className = isSolid ? 'lab-bp-tag solid' : 'lab-bp-tag liquid';
     }
 
@@ -481,9 +727,9 @@ export class LabBackpackWorkbench {
     // Cara Pengambilan Hermes
     const pickupEl = document.getElementById('labBpPickupMethod');
     if (pickupEl) {
-      pickupEl.textContent = isSolid
-        ? '🦾 DICAPIT menggunakan Hydraulic Claw Gripper (Benda Padat)'
-        : '🥄 DISEROK menggunakan Suction Dipper Scoop (Benda Cair)';
+      pickupEl.innerHTML = isSolid
+        ? `<span style="display:inline-flex;align-items:center;gap:6px;">${ICONS.claw(14)} <span>DICAPIT menggunakan Hydraulic Claw Gripper (Benda Padat)</span></span>`
+        : `<span style="display:inline-flex;align-items:center;gap:6px;">${ICONS.drill(14)} <span>DISEROK menggunakan Suction Dipper Scoop (Benda Cair)</span></span>`;
     }
 
     // Informasi Geologi
@@ -544,35 +790,42 @@ export class LabBackpackWorkbench {
   /* ---------------------------------------------------------
    * 6. RENDER DAFTAR SPESIMEN DI SIDEBAR KIRI
    * --------------------------------------------------------- */
+  getScienceDataDict() {
+    return (this.mission && typeof this.mission.getScienceDataDict === 'function')
+      ? this.mission.getScienceDataDict()
+      : REGION_SCIENCE_DATA;
+  }
+
   #refreshSidebarList() {
     const listEl = document.getElementById('labBpItemList');
     const countBadge = document.getElementById('labBpCountBadge');
     if (!listEl) return;
 
+    const dataset = this.#getActiveDataset();
     let collectedCount = 0;
-    const totalCount = Object.keys(REGION_SCIENCE_DATA).length;
+    const totalCount = Object.keys(dataset).length;
 
-    const html = Object.keys(REGION_SCIENCE_DATA).map(key => {
-      const item = REGION_SCIENCE_DATA[key];
+    const html = Object.keys(dataset).map(key => {
+      const item = dataset[key];
       const isCollected = this.isSpecimenCollected(key);
       if (isCollected) collectedCount++;
 
       const isSelected = this.selectedSpecimenId === key;
-      const matterIcon = item.stateOfMatter === 'solid' ? '💎' : '🌊';
+      const matterIcon = item.stateOfMatter === 'solid' ? ICONS.gem(13) : ICONS.layers(13);
       const matterLabel = item.stateOfMatter === 'solid' ? 'Capit (Padat)' : 'Serok (Cair)';
 
       return `
         <div class="lab-bp-item-card ${isSelected ? 'selected' : ''}" data-id="${key}">
-          <div class="lab-bp-ic-header">
-            <span class="lab-bp-ic-icon">${matterIcon}</span>
+          <div class="lab-bp-ic-header" style="display:flex;align-items:center;gap:6px;">
+            <span class="lab-bp-ic-icon" style="display:inline-flex;align-items:center;">${matterIcon}</span>
             <span class="lab-bp-ic-title">${item.artifactName}</span>
           </div>
-          <div class="lab-bp-ic-meta">
-            <span>📍 ${item.name}</span>
+          <div class="lab-bp-ic-meta" style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="display:inline-flex;align-items:center;gap:4px;">${ICONS.pin(11)} ${item.name}</span>
             <span class="lab-bp-ic-tool">${matterLabel}</span>
           </div>
-          <div class="lab-bp-ic-status ${isCollected ? 'collected' : 'pending'}">
-            ${isCollected ? '✓ DI BACKPACK LAB' : '○ TERDETEKSI DI MEDAN'}
+          <div class="lab-bp-ic-status ${isCollected ? 'collected' : 'pending'}" style="display:inline-flex;align-items:center;gap:4px;">
+            ${isCollected ? `${ICONS.checkCircle(10)} <span>DI BACKPACK LAB</span>` : `${ICONS.circle(10)} <span>TERDETEKSI DI MEDAN</span>`}
           </div>
         </div>
       `;
@@ -584,7 +837,6 @@ export class LabBackpackWorkbench {
       countBadge.textContent = `${collectedCount} / ${totalCount} DIAMBIL`;
     }
 
-    // Bind event klik pada setiap kartu item
     listEl.querySelectorAll('.lab-bp-item-card').forEach(card => {
       card.addEventListener('click', () => {
         this.placeArtifactOnDesk(card.dataset.id);
@@ -593,10 +845,12 @@ export class LabBackpackWorkbench {
   }
 
   isSpecimenCollected(id) {
+    const dataset = this.#getActiveDataset();
+    if (dataset[id] && typeof dataset[id].collected === 'boolean') {
+      return dataset[id].collected;
+    }
     if (!this.mission) return false;
-    // Cek apakah ada di muatan kontainer aktif
     if (this.mission.transportCargo && this.mission.transportCargo.id === id) return true;
-    // Cek apakah artefak di medan sudah ditandai collected
     if (this.mission.artifacts) {
       const art = this.mission.artifacts.find(a => a.id === id);
       if (art && art.collected) return true;
@@ -649,10 +903,11 @@ export class LabBackpackWorkbench {
     this.isOpen = true;
     this.overlayEl.style.display = 'flex';
 
-    const targetId = specimenId || this.selectedSpecimenId || 'elysium';
+    const dataset = this.#getActiveDataset();
+    const firstKey = Object.keys(dataset)[0] || 'elysium';
+    const targetId = specimenId && dataset[specimenId] ? specimenId : (dataset[this.selectedSpecimenId] ? this.selectedSpecimenId : firstKey);
     this.placeArtifactOnDesk(targetId);
 
-    // Mulai loop animasi 3D Meja Lab
     this.#startAnimation();
   }
 
@@ -712,23 +967,24 @@ export class LabBackpackWorkbench {
       .lab-bp-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(5, 8, 14, 0.94);
+        background: rgba(4, 7, 12, 0.88);
         z-index: 10000;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 24px;
-        backdrop-filter: blur(12px);
-        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        font-family: var(--font-sans, 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif);
         color: #f1f5f9;
         user-select: none;
       }
 
       .lab-bp-window {
-        background: #090e17;
-        border: 1px solid #1e2e42;
-        border-radius: 6px;
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 30px rgba(0, 229, 255, 0.12);
+        background: rgba(9, 14, 22, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        box-shadow: 0 24px 60px -8px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08);
         width: 100%;
         max-width: 1280px;
         height: 85vh;
@@ -743,36 +999,38 @@ export class LabBackpackWorkbench {
         align-items: center;
         justify-content: space-between;
         padding: 12px 20px;
-        background: #0b1320;
-        border-bottom: 1px solid #1c2b3d;
+        background: rgba(14, 20, 32, 0.8);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
       .lab-bp-badge {
+        font-family: var(--font-mono, 'JetBrains Mono', monospace);
         font-size: 9.5px;
-        font-weight: 800;
+        font-weight: 700;
         color: #00e5ff;
-        background: rgba(0, 229, 255, 0.12);
-        border: 1px solid rgba(0, 229, 255, 0.3);
-        padding: 2px 7px;
-        border-radius: 3px;
-        letter-spacing: 0.5px;
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid rgba(0, 229, 255, 0.25);
+        padding: 2px 8px;
+        border-radius: 4px;
+        letter-spacing: 0.6px;
       }
       .lab-bp-title {
         margin: 4px 0 0;
-        font-size: 15px;
-        font-weight: 800;
-        letter-spacing: 0.5px;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
         color: #fff;
+        font-family: var(--font-sans, 'Plus Jakarta Sans', 'Inter', sans-serif);
       }
       .lab-bp-close-btn {
-        background: #16202e;
-        border: 1px solid #283a52;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         color: #94a3b8;
         padding: 6px 14px;
-        border-radius: 4px;
+        border-radius: 6px;
         cursor: pointer;
-        font-family: inherit;
+        font-family: var(--font-sans, inherit);
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 600;
         transition: all 0.15s;
       }
       .lab-bp-close-btn:hover {
@@ -790,18 +1048,20 @@ export class LabBackpackWorkbench {
 
       /* SIDEBAR INVENTORI KIRI */
       .lab-bp-sidebar {
-        background: #070b12;
-        border-right: 1px solid #172433;
+        background: rgba(7, 11, 18, 0.95);
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
         display: flex;
         flex-direction: column;
         overflow: hidden;
       }
       .lab-bp-sidebar-header {
         padding: 10px 14px;
-        background: #0d1522;
-        border-bottom: 1px solid #1a2738;
-        font-size: 10px;
+        background: rgba(13, 21, 34, 0.6);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 9.5px;
         font-weight: 700;
+        font-family: var(--font-mono, 'JetBrains Mono', monospace);
+        letter-spacing: 0.05em;
         color: #94a3b8;
         display: flex;
         justify-content: space-between;
@@ -809,9 +1069,10 @@ export class LabBackpackWorkbench {
       }
       .lab-bp-count {
         color: #00e5ff;
-        background: #072233;
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid rgba(0, 229, 255, 0.25);
         padding: 2px 6px;
-        border-radius: 3px;
+        border-radius: 4px;
         font-size: 9.5px;
       }
       .lab-bp-list {
@@ -823,28 +1084,28 @@ export class LabBackpackWorkbench {
         gap: 6px;
       }
       .lab-bp-sidebar-footer {
-        padding: 8px 12px;
-        background: #090e17;
-        border-top: 1px solid #15202e;
+        padding: 10px 14px;
+        background: rgba(9, 14, 23, 0.8);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
         color: #64748b;
-        font-size: 9.5px;
-        line-height: 1.35;
+        font-size: 10px;
+        line-height: 1.4;
       }
 
       .lab-bp-item-card {
-        background: #0c121c;
-        border: 1px solid #1a2738;
-        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 6px;
         padding: 9px 10px;
         cursor: pointer;
         transition: all 0.15s;
       }
       .lab-bp-item-card:hover {
-        border-color: #00e5ff66;
-        background: #111a29;
+        border-color: rgba(0, 229, 255, 0.4);
+        background: rgba(255, 255, 255, 0.06);
       }
       .lab-bp-item-card.selected {
-        background: #0d2238;
+        background: rgba(0, 229, 255, 0.08);
         border-color: #00e5ff;
         box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
       }

@@ -10,6 +10,8 @@ export class RoverPhysics {
     this.Y = 0;
     this.heading = 0;
     this.speed = 0;
+    this.throttle = 0;
+    this.steer = 0;
     this.elevation = 0;
     this.slopeDeg = 0;
     this.grad = [0, 0];
@@ -56,6 +58,8 @@ export class RoverPhysics {
    * input: { throttle: -1..1, steer: -1..1 (+ = turn right), sprint: boolean }
    */
   step(dt, { throttle = 0, steer = 0, sprint = false } = {}) {
+    this.throttle = throttle;
+    this.steer = steer;
     const o = this.opts;
     const speedMult = sprint ? 1.5 : 1.0;
     const target = throttle * o.maxSpeed * speedMult;
@@ -78,8 +82,9 @@ export class RoverPhysics {
         const gx = (this.sampleElevation(nx + e, ny) - this.sampleElevation(nx - e, ny)) / (2 * e);
         const gy = (this.sampleElevation(nx, ny + e) - this.sampleElevation(nx, ny - e)) / (2 * e);
         const along = Math.atan(gx * s + gy * c) * 180 / Math.PI * Math.sign(this.speed);
-        if (Math.abs(along) > o.maxSlopeDeg) {
-          blocked = `slope ${Math.abs(along).toFixed(0)}° > ${o.maxSlopeDeg}° limit`;
+        const effectiveLimit = sprint ? 85 : (o.maxSlopeDeg || 65);
+        if (Math.abs(along) > effectiveLimit) {
+          blocked = `slope ${Math.abs(along).toFixed(0)}° > ${effectiveLimit}° limit`;
         } else {
           this.X = nx;
           this.Y = ny;

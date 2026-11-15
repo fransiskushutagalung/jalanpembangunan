@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
+import { ICONS } from './icons.js';
 
 /**
  * VisualPerceptionPanel
@@ -57,7 +58,7 @@ export class VisualPerceptionPanel {
           const doc = this.vpms.captureManual(this.vpms._rovers, this.vpms._activeIdx);
           if (doc) {
             this.showCameraTab(doc);
-            this.showToast('📷 Manual snapshot captured');
+            this.showToast('Manual snapshot captured');
           }
         }
       });
@@ -94,10 +95,22 @@ export class VisualPerceptionPanel {
       <div class="vp-panel-body">
         <!-- Tab Bar -->
         <div class="vp-tabs">
-          <button class="vp-tab-btn active" data-tab="camera">📷 LIVE CAM</button>
-          <button class="vp-tab-btn" data-tab="depth">📐 DEPTH</button>
-          <button class="vp-tab-btn" data-tab="pointcloud">🌐 3D CLOUD</button>
-          <button class="vp-tab-btn" data-tab="gallery">🗂 GALLERY</button>
+          <button class="vp-tab-btn active btn-with-icon" data-tab="camera">
+            ${ICONS.camera(12)}
+            <span>LIVE CAM</span>
+          </button>
+          <button class="vp-tab-btn btn-with-icon" data-tab="depth">
+            ${ICONS.slope(12)}
+            <span>DEPTH</span>
+          </button>
+          <button class="vp-tab-btn btn-with-icon" data-tab="pointcloud">
+            ${ICONS.layers(12)}
+            <span>3D CLOUD</span>
+          </button>
+          <button class="vp-tab-btn btn-with-icon" data-tab="gallery">
+            ${ICONS.fileText(12)}
+            <span>GALLERY</span>
+          </button>
         </div>
 
         <!-- ═══════════════ TAB: LIVE CAMERA ═══════════════ -->
@@ -111,7 +124,7 @@ export class VisualPerceptionPanel {
           </div>
           <div class="vp-cam-viewport" id="vpCamViewport">
             <div class="vp-no-data" id="vpCamNoData">
-              <div class="vp-nd-icon">📷</div>
+              <div class="vp-nd-icon" style="color:var(--data-cyan)">${ICONS.camera(32)}</div>
               <div class="vp-nd-title">NO SNAPSHOT AVAILABLE</div>
               <div class="vp-nd-sub">Complete a mission task or press the capture button<br>to take a manual snapshot.</div>
             </div>
@@ -119,7 +132,10 @@ export class VisualPerceptionPanel {
             <div class="vp-cam-overlay" id="vpCamOverlay"></div>
           </div>
           <div class="vp-cam-controls">
-            <button class="vp-action-btn" id="vpCaptureBtn">📷 CAPTURE SNAPSHOT</button>
+            <button class="vp-action-btn btn-with-icon" id="vpCaptureBtn">
+              ${ICONS.camera(13)}
+              <span>CAPTURE SNAPSHOT</span>
+            </button>
             <div class="vp-cam-spec">
               <span>CAM: <b id="vpCamId">FRONT_CAMERA_SIM</b></span>
               <span>RES: <b>1920×1080</b></span>
@@ -139,7 +155,7 @@ export class VisualPerceptionPanel {
           </div>
           <div class="vp-cam-viewport" id="vpDepthViewport">
             <div class="vp-no-data" id="vpDepthNoData">
-              <div class="vp-nd-icon">📐</div>
+              <div class="vp-nd-icon" style="color:#f59e0b">${ICONS.slope(32)}</div>
               <div class="vp-nd-title">NO DEPTH DATA</div>
               <div class="vp-nd-sub">Complete a task to generate a depth estimation from terrain heightfield.</div>
             </div>
@@ -162,11 +178,14 @@ export class VisualPerceptionPanel {
               <span class="vp-status-dot" id="vpPcStatusDot" style="background:#94a3b8"></span>
               <span class="vp-label-mono" id="vpPcStatus">3D RECONSTRUCTION — IDLE</span>
             </div>
-            <button class="vp-ctrl-btn" id="vpPcResetBtn" title="Reset Camera">↺ Reset</button>
+            <button class="vp-ctrl-btn btn-with-icon" id="vpPcResetBtn" title="Reset Camera">
+              ${ICONS.rotateCcw(11)}
+              <span>Reset</span>
+            </button>
           </div>
           <div id="vpPointCloud" class="vp-cam-viewport" style="background:#050810;">
             <div class="vp-no-data" id="vpPcNoData">
-              <div class="vp-nd-icon">🌐</div>
+              <div class="vp-nd-icon" style="color:#a855f7">${ICONS.layers(32)}</div>
               <div class="vp-nd-title">NO POINT CLOUD DATA</div>
               <div class="vp-nd-sub">Complete a mission task to build a 3D terrain reconstruction.</div>
             </div>
@@ -199,7 +218,7 @@ export class VisualPerceptionPanel {
           </div>
           <div class="vp-gallery-list" id="vpGalleryList">
             <div class="vp-no-data" style="height:100%">
-              <div class="vp-nd-icon">🗂</div>
+              <div class="vp-nd-icon" style="color:#64748b">${ICONS.fileText(32)}</div>
               <div class="vp-nd-title">MISSION GALLERY EMPTY</div>
               <div class="vp-nd-sub">Documentation will appear here as mission tasks are completed.</div>
             </div>
@@ -221,8 +240,11 @@ export class VisualPerceptionPanel {
             <div class="vp-label-mono" id="vpModalSubtitle" style="color:#94a3b8;margin-top:2px;"></div>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
-            <button class="vp-action-btn" id="vpModalDownloadBtn">⬇ Download</button>
-            <button class="vp-ctrl-btn" id="vpModalClose">✕</button>
+            <button class="vp-action-btn btn-with-icon" id="vpModalDownloadBtn">
+              ${ICONS.fileText(12)}
+              <span>Download</span>
+            </button>
+            <button class="vp-ctrl-btn" id="vpModalClose" style="display:inline-flex;align-items:center;justify-content:center;">${ICONS.x(12)}</button>
           </div>
         </div>
         <div class="vp-modal-body" id="vpModalBody">
@@ -466,7 +488,7 @@ export class VisualPerceptionPanel {
     if (!docs.length) {
       list.innerHTML = `
         <div class="vp-no-data" style="height:100%">
-          <div class="vp-nd-icon">🗂</div>
+          <div class="vp-nd-icon" style="color:#64748b">${ICONS.fileText(32)}</div>
           <div class="vp-nd-title">NO RECORDS MATCH FILTER</div>
           <div class="vp-nd-sub">Adjust the filters or complete mission tasks to generate documentation.</div>
         </div>`;
@@ -543,10 +565,10 @@ export class VisualPerceptionPanel {
       this.showDepthTab(targetDoc);
       this.showPointCloud(targetDoc);
       this.openModal(targetDoc.docId);
-      this.showToast(`📸 [VPMS] Dokumentasi Visual Aktif · ${targetDoc.taskId}`);
+      this.showToast(`[VPMS] Dokumentasi Visual Aktif · ${targetDoc.taskId}`);
     } else {
       this.#switchTab('camera');
-      this.showToast('📸 [VPMS] Panel Persepsi Visual Terbuka');
+      this.showToast('[VPMS] Panel Persepsi Visual Terbuka');
     }
   }
 
@@ -586,11 +608,11 @@ export class VisualPerceptionPanel {
 
     const rgbHTML = hasRgb
       ? `<img class="vp-modal-img" src="${doc.rgbDataUrl}" alt="RGB Snapshot" title="Click to zoom">`
-      : `<div class="vp-modal-na">📷 RGB<br>CAMERA UNAVAILABLE</div>`;
+      : `<div class="vp-modal-na" style="display:flex;flex-direction:column;align-items:center;gap:6px;">${ICONS.camera(20)}<span>RGB CAMERA UNAVAILABLE</span></div>`;
 
     const depthHTML = hasDepth
       ? `<img class="vp-modal-img" src="${doc.depthDataUrl}" alt="Depth Map" title="Click to zoom">`
-      : `<div class="vp-modal-na">📐 DEPTH<br>DATA UNAVAILABLE</div>`;
+      : `<div class="vp-modal-na" style="display:flex;flex-direction:column;align-items:center;gap:6px;">${ICONS.slope(20)}<span>DEPTH DATA UNAVAILABLE</span></div>`;
 
     return `
       <div class="vp-modal-images">
@@ -616,7 +638,10 @@ export class VisualPerceptionPanel {
           <tr><td>Point Cloud</td><td>${doc.pointCloudStatus} (${doc.pointCloudData?.length || 0} pts)</td><td>Analysis</td><td>${doc.mineral}</td></tr>
           <tr><td colspan="4" style="color:#94a3b8;font-size:9.5px;padding-top:4px;">${doc.analysisResult}</td></tr>
         </table>
-        <button class="vp-action-btn" id="vpModalPcBtn" ${hasPc ? '' : 'disabled'}>🌐 Open 3D Point Cloud Viewer</button>
+        <button class="vp-action-btn btn-with-icon" id="vpModalPcBtn" ${hasPc ? '' : 'disabled'}>
+          ${ICONS.layers(12)}
+          <span>Open 3D Point Cloud Viewer</span>
+        </button>
       </div>
     `;
   }
@@ -688,7 +713,7 @@ export class VisualPerceptionPanel {
       // If gallery tab is active, refresh it
       if (this.activeTab === 'gallery') this.#renderGallery();
 
-      this.showToast(`📸 [VPMS] Documentation captured: ${doc.taskId} · ${doc.regionName}`);
+      this.showToast(`[VPMS] Documentation captured: ${doc.taskId} · ${doc.regionName}`);
     };
   }
 
@@ -707,14 +732,16 @@ export class VisualPerceptionPanel {
         bottom: 44px;
         left: 12px;
         width: 420px;
-        background: rgba(10, 14, 20, 0.97);
-        border: 1px solid #1e293b;
-        border-radius: 4px;
+        background: rgba(10, 14, 22, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
         z-index: 950;
-        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+        font-family: var(--font-sans, 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif);
         font-size: 11px;
         color: #e2e8f0;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.75);
+        box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
         max-height: calc(100vh - 100px);
         display: flex;
         flex-direction: column;
@@ -725,17 +752,18 @@ export class VisualPerceptionPanel {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 7px 10px;
-        background: #0c131f;
-        border-bottom: 1px solid #1e293b;
+        padding: 8px 12px;
+        background: rgba(14, 20, 32, 0.7);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         flex-shrink: 0;
       }
 
       .vp-agency-tag {
         font-size: 11px;
-        font-weight: 900;
+        font-weight: 800;
+        font-family: var(--font-mono, 'JetBrains Mono', monospace);
         color: #e03c31;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
         display: flex;
         align-items: center;
         gap: 5px;

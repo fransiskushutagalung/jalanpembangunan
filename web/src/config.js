@@ -8,7 +8,7 @@ export const CONFIG = {
     maxSpeed: 100,              // m/s (fast responsive simulation speed: 360 km/h)
     acceleration: 65,           // m/s² (snappy acceleration)
     turnRate: 1.8,              // rad/s (agile responsive turning)
-    maxSlopeDeg: 42,            // slopes steeper than this block movement (allows climbing volcanoes/craters)
+    maxSlopeDeg: 65,            // slopes steeper than this block movement (Shift allows up to 85° extreme climb)
   },
   // Start near the publicly documented Mars 2020 landing site (approx.). Used only as a start position.
   startLonLat: [77.4509, 18.4446],
